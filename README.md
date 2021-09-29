@@ -2,8 +2,6 @@
 
 Outils d'analyse d'un portefeuille financier
 
-
-
 ## Environnement
 
 * R version 3.6.3
@@ -11,6 +9,7 @@ Outils d'analyse d'un portefeuille financier
   * `PerformanceAnalytics` : évaluer les performances des stratégies et du portefeuille [Vignettes dispo](https://cran.r-project.org/web/packages/PerformanceAnalytics/index.html)
   * `xts` : manipuler des series temporelles [vignette](https://cran.r-project.org/web/packages/xts/vignettes/xts.pdf)
   * `tidyquant` : utiliser les outils d'analyse de portefeuille avec le tidyverse [vignettes](https://cran.r-project.org/web/packages/tidyquant/index.html)
+  * `quantmod` : télécharger des données depuis internet [site](https://www.quantmod.com/examples/data/) 
   
 ## Bibliographie 
 
@@ -25,4 +24,3 @@ Outils d'analyse d'un portefeuille financier
 * [Tidy Portfoliomanagement in R, Sebastian Stöckl, 2018](https://bookdown.org/sstoeckl/Tidy_Portfoliomanagement_in_R/)
 * [Backtesting Strategies with R, Tim Trice, 2016](https://timtrice.github.io/backtesting-strategies/index.html)
 
-Test
