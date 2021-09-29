@@ -25,4 +25,4 @@ Outils d'analyse d'un portefeuille financier
 * [Tidy Portfoliomanagement in R, Sebastian Stöckl, 2018](https://bookdown.org/sstoeckl/Tidy_Portfoliomanagement_in_R/)
 * [Backtesting Strategies with R, Tim Trice, 2016](https://timtrice.github.io/backtesting-strategies/index.html)
 
-
+Test
