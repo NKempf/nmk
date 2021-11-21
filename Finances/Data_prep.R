@@ -81,8 +81,10 @@ datatable(dep2,rownames = FALSE)
 
 # Boursorama Perso
 
-bourso_perso <- read.xlsx("input/Comptes/Bourso perso/Export_compte_00040384302_du_01-09-2020_au_21-11-2021.xlsx",
-                       sheet = 1,startRow = 4,detectDates = TRUE)
+bourso_perso <- read.xlsx("input/Comptes/Bourso perso/compte_PERSO_BOURSO_00040384302_du_01-09-2020_au_21-11-2021.xlsx",
+                       sheet = 1,startRow = 4,detectDates = TRUE) %>% 
+  mutate(date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y")) %>% 
+  select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION)
 
 bourso_perso <- bourso_perso %>% 
   mutate(type_operation = case_when
@@ -114,10 +116,24 @@ bourso_perso <- bourso_perso %>%
            qui_operation %in% c("Visa premier Bourso NK","Orange","Nalo_ass_vie","Linxea_ass_vie","Linxea_per","Insee") ~ "Mensuelle",
            TRUE ~ "Exceptionnelle"
          )
-
-         
-         
   )
+
+
+# Revenus hors virements interne ou avec SG
+rev <- bourso_perso %>% 
+  filter(sens_operation == "Revenu" & !qui_operation %in% c("SG NK","Interne Bourso")) %>% 
+  select(date, everything()) %>% 
+  group_by(month(date),regularite_operation) %>% 
+  summarise(MONTANT = sum(MONTANT)) %>% 
+  rename(mois = `month(date)`)
+
+
+# Graphique des revenus
+g3 <- ggplot(rev, aes(fill=regularite_operation, y=MONTANT, x=mois)) + 
+  geom_bar(position="stack", stat="identity")
+
+g3
+
 
 
 bourso_perso %>% 
