@@ -101,6 +101,7 @@ div_adjust(x, t, div = -cf, backward = FALSE)
 ### code chunk number 1: chapter-settings
 ###################################################
 Sys.setenv(LANGUAGE = "en")
+set.seed (2552551)
 library("NMOF")
 library("PMwR")
 library("parallel")
