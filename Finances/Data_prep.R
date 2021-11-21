@@ -70,7 +70,7 @@ dep_excep <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "dep_excep",startRow 
 
 dep2 <- dep_excep %>% 
   filter(month(date) == 10) %>% 
-    arrange(desc(montant)) %>% 
+  arrange(desc(montant)) %>% 
   slice(1:5) %>% 
   adorn_totals("row") 
 
@@ -80,9 +80,8 @@ datatable(dep2,rownames = FALSE)
 # III. Relevés de comptes----
 
 # Boursorama Perso
-
 bourso_perso <- read.xlsx("input/Comptes/Bourso perso/compte_PERSO_BOURSO_00040384302_du_01-09-2020_au_21-11-2021.xlsx",
-                       sheet = 1,startRow = 4,detectDates = TRUE) %>% 
+                          sheet = 1,startRow = 4,detectDates = TRUE) %>% 
   mutate(date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y")) %>% 
   select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION)
 
@@ -101,7 +100,7 @@ bourso_perso <- bourso_perso %>%
                                              str_detect(LIBELLE, "Virement de Monsieur Nicolas", negate = FALSE) |
                                              str_detect(LIBELLE, "Virement interne", negate = FALSE) |
                                              str_detect(LIBELLE, "Regularisation du compte", negate = FALSE)
-                                           ) ~ "Interne Bourso",
+           ) ~ "Interne Bourso",
            type_operation == "Releve Visa premier" ~ "Visa premier Bourso NK",
            type_operation == "Prelevement" & str_detect(LIBELLE, "Orange", negate = FALSE) ~ "Orange",
            type_operation == "Prelevement" & str_detect(LIBELLE, "GENERALI VIE SA", negate = FALSE) ~ "Nalo_ass_vie",
@@ -109,7 +108,7 @@ bourso_perso <- bourso_perso %>%
            type_operation == "Virement" & str_detect(LIBELLE, "MGEFI", negate = FALSE) ~ "MGEFI",
            type_operation == "Virement" & str_detect(LIBELLE, "DRFIP ILE DE FRANCE ET DE PARIS", negate = FALSE) ~ "Insee",
            type_operation == "Prelevement" & str_detect(LIBELLE, "SPIRICA", negate = FALSE) ~ "Linxea_per",
-
+           
            TRUE ~ "autre"
          ),
          regularite_operation = case_when(
@@ -118,26 +117,68 @@ bourso_perso <- bourso_perso %>%
          )
   )
 
+# SG Perso
+sg_perso <- read.xlsx("input/Comptes/SG Perso/compte_SG_Perso_23_05_21_au_21_11_21.xlsx",
+                          sheet = 1,startRow = 3,detectDates = TRUE)  %>% 
+  mutate(date = as.Date(`Date.de.l'opération`, format =  "%d/%m/%Y")) %>%
+  select(date,LIBELLE=Libellé,detail=`Détail.de.l'écriture`,MONTANT=`Montant.de.l'opération`)
+
+sg_perso <- sg_perso %>% 
+  mutate(type_operation = case_when
+         (str_detect(LIBELLE, "VIR", negate = FALSE) ~ "Virement",
+           str_detect(LIBELLE, "Relev", negate = FALSE) ~ "Releve Visa premier",
+           str_detect(LIBELLE, "PRLV", negate = FALSE)|
+             str_detect(LIBELLE, "COTISATION", negate = FALSE)|
+             str_detect(LIBELLE, "PRELEVEMENT", negate = FALSE)|
+             str_detect(LIBELLE, "FRAIS", negate = FALSE) ~ "Prelevement",
+           str_detect(LIBELLE, "RETRAIT", negate = FALSE) ~ "Retrait",
+           str_detect(LIBELLE, "CHEQUE", negate = FALSE) ~ "Cheque",
+           str_detect(LIBELLE, "CARTE", negate = FALSE) ~ "CB",
+           TRUE ~ "autre"
+         ),
+         sens_operation = ifelse(MONTANT >=0, "Revenu","Depense"),
+         qui_operation = case_when(
+           str_detect(detail, 
+             paste(c(        
+             "JAZZ",
+             "PIANO RENOUV",
+             "FRAIS PAIEMENT HORS ZONE")
+             ,collapse = "|")
+           , negate = FALSE) ~ "Frais bancaire",
+           str_detect(detail, "SURAVENIR", negate = FALSE) ~ "Linxea_ass_vie",
+           TRUE ~ "autre"
+         )
+         
+         
+         
+  )
+
+
 
 # Revenus hors virements interne ou avec SG
 rev <- bourso_perso %>% 
   filter(sens_operation == "Revenu" & !qui_operation %in% c("SG NK","Interne Bourso")) %>% 
   select(date, everything()) %>% 
-  group_by(month(date),regularite_operation) %>% 
-  summarise(MONTANT = sum(MONTANT)) %>% 
-  rename(mois = `month(date)`)
-
+  mutate(type_revenu = case_when(
+    regularite_operation == "Mensuelle" & str_detect(LIBELLE, "DRFIP ILE DE FRANCE ET DE PARIS", negate = FALSE) ~ "Paye",
+    TRUE ~ "Exceptionnel"
+  )
+  ) %>% 
+group_by(month(date),type_revenu) %>%
+summarise(MONTANT = sum(MONTANT)) %>%
+rename(mois = `month(date)`)
 
 # Graphique des revenus
-g3 <- ggplot(rev, aes(fill=regularite_operation, y=MONTANT, x=mois)) + 
-  geom_bar(position="stack", stat="identity")
+g3 <- ggplot(rev, aes(fill=type_revenu, y=MONTANT, x=mois)) + 
+  geom_bar(position="stack", stat="identity")+
+  labs(
+    x = "Mois", 
+    y = "Montant (€)", 
+    fill = "Type",
+    title = "Revenus par mois NK"
+  )
 
 g3
-
-
-
-bourso_perso %>% 
-  filter(type_operation == "autre")
 
 
 
