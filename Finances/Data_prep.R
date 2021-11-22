@@ -94,7 +94,7 @@ bourso_perso <- bourso_perso %>%
            TRUE ~ "autre"
          ),
          sens_operation = ifelse(MONTANT >=0, "Revenu","Depense"),
-         qui_operation = case_when(
+         raison_operation = case_when(
            type_operation == "Virement" & str_detect(LIBELLE, "SEPA M. NICOLAS KEMPF", negate = FALSE) ~ "SG NK",
            type_operation == "Virement" & (str_detect(LIBELLE, "Alimentation PEA", negate = FALSE) | 
                                              str_detect(LIBELLE, "Virement de Monsieur Nicolas", negate = FALSE) |
@@ -137,15 +137,32 @@ sg_perso <- sg_perso %>%
            TRUE ~ "autre"
          ),
          sens_operation = ifelse(MONTANT >=0, "Revenu","Depense"),
-         qui_operation = case_when(
+         # Raison de l'opération
+         raison_operation = case_when(
            str_detect(detail, 
-             paste(c(        
-             "JAZZ",
-             "PIANO RENOUV",
-             "FRAIS PAIEMENT HORS ZONE")
-             ,collapse = "|")
-           , negate = FALSE) ~ "Frais bancaire",
+             paste(c("JAZZ","PIANO RENOUV","FRAIS PAIEMENT HORS ZONE")
+             ,collapse = "|"),negate = FALSE) ~ "Frais bancaire",
            str_detect(detail, "SURAVENIR", negate = FALSE) ~ "Linxea_ass_vie",
+           str_detect(detail, "DRFIP ILE DE FRANCE ET DE PARIS", negate = FALSE) ~ "Insee",
+           str_detect(detail, 
+                      paste(c("Keolis Bordeaux","L AUTO D ARES")
+                        ,collapse = "|"), negate = FALSE) ~ "Transport",
+           str_detect(detail, 
+                      paste(c("CHEZ HORTENSE")
+                        ,collapse = "|"), negate = FALSE) ~ "Restaurant",
+           
+           str_detect(detail, 
+                      paste(c("VIR PERM")
+                        ,collapse = "|"), negate = FALSE) ~ "Epargne loisir",
+           
+           str_detect(toupper(detail), 
+                      paste(c("VIR EUROPEEN EMIS LOGITEL POUR: KEMPF NICOLAS")
+                            ,collapse = "|"), negate = FALSE) ~ "Boursorama Perso",
+           str_detect(detail, 
+                      paste(c("VIR EUROPEEN EMIS LOGITEL POUR: INDIVISION KEMPF DEMOUGEOT")
+                            ,collapse = "|"), negate = FALSE) ~ "SG Joint",
+           
+
            TRUE ~ "autre"
          )
          
@@ -157,7 +174,7 @@ sg_perso <- sg_perso %>%
 
 # Revenus hors virements interne ou avec SG
 rev <- bourso_perso %>% 
-  filter(sens_operation == "Revenu" & !qui_operation %in% c("SG NK","Interne Bourso")) %>% 
+  filter(sens_operation == "Revenu" & !raison_operation %in% c("SG NK","Interne Bourso")) %>% 
   select(date, everything()) %>% 
   mutate(type_revenu = case_when(
     regularite_operation == "Mensuelle" & str_detect(LIBELLE, "DRFIP ILE DE FRANCE ET DE PARIS", negate = FALSE) ~ "Paye",
