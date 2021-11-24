@@ -256,28 +256,34 @@ compte <- compte %>%
                               "FORFAITAIRE NOMBRE JOURS")
                             ,collapse = "|"),negate = FALSE) ~ "Frais bancaire",
            str_detect(LIBELLE,
-                      paste(c("Keolis Bordeaux","KEOLIS TBM")
+                      paste(c("Keolis Bordeaux","KEOLIS TBM","KADOLIS","KEOLIS")
                             ,collapse = "|"), negate = FALSE) ~ "Transport",
            str_detect(LIBELLE,
                       paste(c("CHEZ HORTENSE","BURGER KING","MCDONALD S","YAKI YAKI","LE MANCICIDOR","L AQUITAINE RESTAUR","CHEZ LAURETTE",
                               "MC DONALD'S","MC DONALD S","LITALIEN","UBER    EATS","MC DO BEGLES","LE GET","AU CHAROLAIS","BRIME DE URZ","VENTS ET MAREES",
-                              "LE CHIEN DE PAVLO","LE CAFE DU THEA","CHAI PASCAL","LES MILLE ET UNE NU","PIZZ LA FLOREN","LE LATINO","PRET A MANGER")
+                              "LE CHIEN DE PAVLO","LE CAFE DU THEA","CHAI PASCAL","LES MILLE ET UNE NU","PIZZ LA FLOREN","LE LATINO","PRET A MANGER",
+                              "VOISIN 11012","L OTENTIK","ROCHER MALENDUR","le petit gerard","LE JARDIN DE PA","GOUNES FOOD",
+                              "DJAM S PIZZAS","FINGER MOOD","AQUIT RESTAU","KFC VILLENAVE","MISS FOOD","ATMOSPHER","KFC")
                             ,collapse = "|"), negate = FALSE) ~ "Restaurant",
            str_detect(LIBELLE,
                       paste(c("ASF","ESCOTA","APRR","COFIROUTE","AUTOROUTES")
                             ,collapse = "|"), negate = FALSE) ~ "Peage",
            str_detect(LIBELLE,
-                      paste(c("ESSFLOREALY","CARREFSTATION","AUCHAN SUPER","AUCHAN CARBURANT","L AUTO D ARES","ITM STATION","CORA DL CARBURA")
+                      paste(c("ESSFLOREALY","CARREFSTATION","AUCHAN SUPER","AUCHAN CARBURANT","L AUTO D ARES","ITM STATION","CORA DL CARBURA","ABB BORDEAUX",
+                              "TOTAL","CHIOCCHIO","SCP MADIOT DUSSA","STATION U")
                             ,collapse = "|"), negate = FALSE) ~ "Essence",
            str_detect(LIBELLE,
                       paste(c("CYRILLUS","LA HALLE","MAILLE SOUPLE","KIABI","ROUMEGOUX   GIL","MAGODIS","ROUMEGOUX   GIL","MURMURS","HERBES FAUVE","HEDERA",
-                              "SUMUP   MIRREY","JACADI")
+                              "SUMUP   MIRREY","JACADI","SUMUP   UKA DISTRIBUTION","la source","AUBERT","BABY LUX","MICHEL S","CDISCOUNT 1 A   4",
+                              "MADIOT DUSSAUGE","BONOBO","VERTBAUDET","PETIT BATEAU")
                             ,collapse = "|"), negate = FALSE) ~ "Habillement",
            str_detect(LIBELLE,
                       paste(c("DECATHLON","STEAM","CULTURA","HOT SPOT","Leetchi SA","COURSRA","PIP PRESSION","BASSIN LUMIERES",
                               "JN LAVAGE","PHOTOMATON","AMAZON PAYMENTS COMMERCE ELECTRONIQUE","AMAZON PAYMENTS","CHRISTIAN VINET",
                               "CINEMA JEAN EUS","L EMBARCADERE","SARL COMPTOIR DU","BACS GIRONDE ROY","K0307","LA TAVERNE DU MI","CT JJ BOSC",
-                              "SC LA PLACE","SARL AXELLE","LA POSTE","PICWICTOYS","UNIVERSOTAKU FR")
+                              "SC LA PLACE","SARL AXELLE","LA POSTE","PICWICTOYS","UNIVERSOTAKU FR","BK              2","MATY VAD",
+                              "ANVAL","LE NOUVEAU COUCH","RODAME","CENTRE DE PLONG","KARUTRADE","SARL 3L","AMAZON EU SARL","RR LCS BAINS",
+                              "CHARLE S","INDIGO","AMAZON DIGITAL","FNACMARKETPLACE","GOOGLE Google Storage","EBB","CAVE LES VIGNERON")
                             ,collapse = "|"), negate = FALSE) ~ "Loisir",
            
            str_detect(LIBELLE,
@@ -287,25 +293,26 @@ compte <- compte %>%
            str_detect(LIBELLE,
                       paste(c("E.LECLERC","BOULANGERIE","CARREFOURMARKET","LE PAIN DE TRANCHOIR","FOURNIL ARS","LE PAIN DE TRANC",
                               "MAISON DES VIANDE","PICARD","LECLERC","BIOCOOP","SUPER U","TOQUE CUIVRE","ARCOUR","AU ROCHER D AVON","FOURNIL DE BEGLE",
-                              "LIDL","CARREFOUR","MTPK SAINT JEAN","LES MILLE PAINS","U EXPRESS","INTERMARCHE","COTE BOULANGE","INTERMARCH","GEANT")
+                              "LIDL","CARREFOUR","MTPK SAINT JEAN","LES MILLE PAINS","U EXPRESS","INTERMARCHE","COTE BOULANGE","INTERMARCH","GEANT",
+                              "SOCCO SAINTE ROSE","YVONNE LIFESTOR3","VILLENAVE BIO","SUMUP   CABINET")
                             ,collapse = "|"), negate = FALSE) ~ "Alimentation",
            
            str_detect(LIBELLE,
-                      paste(c("SALON AURELIE")
+                      paste(c("SALON AURELIE","KLARY S COIFFU")
                             ,collapse = "|"), negate = FALSE) ~ "Coiffeur",
            str_detect(LIBELLE,
-                      paste(c("NETFLIX COM","Netfixte")
+                      paste(c("NETFLIX COM","Netfixte","JULIEN GLENISSON")
                             ,collapse = "|"), negate = FALSE) ~ "Netflix",
            str_detect(LIBELLE,
                       paste(c("PEPINIERES LANN","JARDILAND")
                             ,collapse = "|"), negate = FALSE) ~ "Jardin",
            
            str_detect(LIBELLE,
-                      paste(c("CASTORAMA","LEROY MERLIN")
+                      paste(c("CASTORAMA","LEROY MERLIN","VISSERIE SERVICE","PLASTOREX")
                             ,collapse = "|"), negate = FALSE) ~ "Bricolage",
            
            str_detect(LIBELLE,
-                      paste(c("IKEA","ZODIO")
+                      paste(c("IKEA","ZODIO","BOUSCAT CEN CB 4223","BUREAU VALLEE","HABITAT")
                             ,collapse = "|"), negate = FALSE) ~ "Ammeublement",
            
            
@@ -336,7 +343,7 @@ compte <- compte %>%
                             ,collapse = "|"), negate = FALSE) ~ "Maison",
            
            str_detect(LIBELLE,
-                      paste(c("URSSAF RHONE ALPES","Severine")
+                      paste(c("URSSAF RHONE ALPES","Severine","REBIERE SEVERINE")
                             ,collapse = "|"), negate = FALSE) ~ "Ménage",
            
            str_detect(LIBELLE, 
@@ -348,7 +355,8 @@ compte <- compte %>%
                             ,collapse = "|"), negate = FALSE) ~ "Nalo_ass_vie",
            
            str_detect(LIBELLE, 
-                      paste(c("FEU VERT","SIMPLAUTO","NORAUTO","STATIONNEMENTS","MTPK PESSAC","PARKING ST CHARL","AEROPOT BORDEAU")
+                      paste(c("FEU VERT","SIMPLAUTO","NORAUTO","STATIONNEMENTS","MTPK PESSAC","PARKING ST CHARL","AEROPOT BORDEAU",
+                              "AEROPORT GPE","STAT  BORDEAUX","HORODATEURS AUT")
                             ,collapse = "|"), negate = FALSE) ~ "Voiture",
            
            str_detect(LIBELLE, 
@@ -356,7 +364,7 @@ compte <- compte %>%
                             ,collapse = "|"), negate = FALSE) ~ "Pret_immo",
            
            str_detect(LIBELLE,
-                      paste(c("SHA")
+                      paste(c("SHA","HOTEL VATEL")
                             ,collapse = "|"), negate = FALSE) ~ "Hotel",
            
            str_detect(LIBELLE,
@@ -364,15 +372,29 @@ compte <- compte %>%
                             ,collapse = "|"), negate = FALSE) ~ "Avion",
            
            str_detect(LIBELLE,
-                      paste(c("DR DEBORDE","MGEFI","DR PARRIEUS","C P A M  BORDEAUX","PHARMACIE BARRIER")
+                      paste(c("DR DEBORDE","MGEFI","DR PARRIEUS","C P A M  BORDEAUX","PHARMACIE BARRIER","GRANDE PHARMACIE","MAISON SANTE PRO",
+                              "PHARMA RIVETTE","PHARMACIE GARCIA")
                             ,collapse = "|"), negate = FALSE) ~ "Sante",
            
            str_detect(LIBELLE,
                       paste(c("Gaz de Bordeaux")
                             ,collapse = "|"), negate = FALSE) ~ "Gaz",
            
+           str_detect(LIBELLE,
+                      paste(c("TWINSEO")
+                            ,collapse = "|"), negate = FALSE) ~ "Assurance_pret",
            
+           
+           str_detect(LIBELLE,
+                      paste(c("SNCF INTERNET")
+                            ,collapse = "|"), negate = FALSE) ~ "Train",
+           
+           str_detect(LIBELLE,
+                      paste(c("SPIRICA")
+                            ,collapse = "|"), negate = FALSE) ~ "Linxea_per",
             
+           
+           
            # str_detect(detail,
            #            paste(c("VIR PERM")
            #                  ,collapse = "|"), negate = FALSE) ~ "Epargne loisir",
