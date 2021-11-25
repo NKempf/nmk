@@ -16,8 +16,8 @@ fin <- read.xlsx("input/fin_16_11_2021.xlsx",detectDates = T,sheet = "patrimoine
   mutate(date2 = format(date, "%Y-%m"))
 
 fin2 <- fin %>% 
-  select(date,BFM,LDD,PEA,Linxea_ass_vie, Nalo_ass_vie, PER, CTO, Maison) %>% 
-  mutate(Epargne.totale = BFM + LDD + PEA + Linxea_ass_vie + Nalo_ass_vie + PER + CTO + Maison) %>% 
+  select(date,BFM,LDD,PEA,Linxea_ass_vie, Nalo_ass_vie, PER, CTO, Maison ,livret_bourso) %>% 
+  mutate(Epargne.totale = BFM + LDD + PEA + Linxea_ass_vie + Nalo_ass_vie + PER + CTO + Maison + livret_bourso) %>% 
   gather(compte,value,-date)
 
 # Graph : évolution du patrimoine 
@@ -44,7 +44,8 @@ ggplotly(g1)
 fin_marius <- fin %>% 
   select(date,yomoni_Marius) %>% 
   mutate(Epargne.totale = yomoni_Marius) %>%
-  gather(compte,value,-date)
+  gather(compte,value,-date) %>% 
+  filter(date >= "2021-10-01")
 
 g2 <- ggplot(fin_marius, aes(x=date,group = compte, y=value,color = compte)) +
   geom_line() +
@@ -325,6 +326,8 @@ compte <- compte %>%
          )
   )
 
+
+# IV. Revenus----
 # Revenus hors virements interne ou avec SG
 rev <- compte %>% 
   filter(sens_operation == "Revenu" & !raison_operation %in% c("Virement_Exterieur","Virement_Lise","Virement_interne","Epargne","Avion") & 
@@ -339,13 +342,15 @@ rev <- compte %>%
                      ,collapse = "|"), negate = FALSE) ~ "Remboursement",
     TRUE ~ "autre"),
     type_revenu = factor(type_revenu,levels = c("Autre","Remboursement","Paye"))
-  ) %>% 
+  ) 
+
+rev2 <- rev %>% 
   group_by(month(date),type_revenu) %>%
   summarise(MONTANT = sum(MONTANT)) %>%
   rename(mois = `month(date)`)
 
 # Graphique des revenus
-g3 <- ggplot(rev, aes(fill=type_revenu, y=MONTANT, x=mois)) + 
+g3 <- ggplot(rev2, aes(fill=type_revenu, y=MONTANT, x=mois)) + 
   geom_bar(position="stack", stat="identity")+
   labs(
     x = "Mois", 
@@ -356,7 +361,17 @@ g3 <- ggplot(rev, aes(fill=type_revenu, y=MONTANT, x=mois)) +
 
 g3
 
+# Les principaux revenus par mois
 
+mois.filtre <- 10
+
+revprinc <- rev %>% 
+  select(-type_operation,-sens_operation) %>% 
+  filter(month(date) == mois.filtre) %>% 
+  arrange(desc(MONTANT)) %>% 
+  adorn_totals("row") 
+
+tab_rev <- datatable(revprinc,rownames = FALSE,colnames = c("Date","Compte","Raison","Montant (€)","Origine","Type"))
 
 
 
