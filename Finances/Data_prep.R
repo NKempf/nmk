@@ -79,107 +79,6 @@ datatable(dep2,rownames = FALSE)
 
 # III. Relevés de comptes----
 
-# # Boursorama Perso
-# bourso_perso <- read.xlsx("input/Comptes/Bourso perso/compte_PERSO_BOURSO_00040384302_du_01-09-2020_au_21-11-2021.xlsx",
-#                           sheet = 1,startRow = 4,detectDates = TRUE) %>% 
-#   mutate(date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
-#          compte = "Bourso perso"
-#          ) %>% 
-#   select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION) %>% 
-#   select(date, compte,everything()) %>% 
-#   filter(!str_detect(LIBELLE, "Relev", negate = FALSE)) # Suppression des dépenses de CD premier car intégration dans la table globale
-# 
-# bourso_perso <- bourso_perso %>% 
-#   mutate(type_operation = case_when
-#          (str_detect(LIBELLE, "VIR", negate = FALSE) ~ "Virement",
-#            str_detect(LIBELLE, "Relev", negate = FALSE) ~ "Releve Visa premier",
-#            str_detect(LIBELLE, "PRLV", negate = FALSE) ~ "Prelevement",
-#            str_detect(LIBELLE, "RETRAIT ", negate = FALSE) ~ "Retrait",
-#            TRUE ~ "autre"
-#          ),
-#          sens_operation = ifelse(MONTANT >=0, "Revenu","Depense"),
-#          raison_operation = case_when(
-#            type_operation == "Virement" & str_detect(LIBELLE, "SEPA M. NICOLAS KEMPF", negate = FALSE) ~ "SG NK",
-#            type_operation == "Virement" & (str_detect(LIBELLE, "Alimentation PEA", negate = FALSE) | 
-#                                              str_detect(LIBELLE, "Virement de Monsieur Nicolas", negate = FALSE) |
-#                                              str_detect(LIBELLE, "Virement interne", negate = FALSE) |
-#                                              str_detect(LIBELLE, "Regularisation du compte", negate = FALSE)
-#            ) ~ "Interne Bourso",
-#            type_operation == "Releve Visa premier" ~ "Visa premier Bourso NK",
-#            type_operation == "Prelevement" & str_detect(LIBELLE, "Orange", negate = FALSE) ~ "Orange",
-#            type_operation == "Prelevement" & str_detect(LIBELLE, "GENERALI VIE SA", negate = FALSE) ~ "Nalo_ass_vie",
-#            type_operation == "Prelevement" & str_detect(LIBELLE, "SURAVENIR", negate = FALSE) ~ "Linxea_ass_vie",
-#            type_operation == "Virement" & str_detect(LIBELLE, "MGEFI", negate = FALSE) ~ "MGEFI",
-#            type_operation == "Virement" & str_detect(LIBELLE, "DRFIP ILE DE FRANCE ET DE PARIS", negate = FALSE) ~ "Insee",
-#            type_operation == "Prelevement" & str_detect(LIBELLE, "SPIRICA", negate = FALSE) ~ "Linxea_per",
-#            
-#            TRUE ~ "autre"
-#          ),
-#          regularite_operation = case_when(
-#            raison_operation %in% c("Visa premier Bourso NK","Orange","Nalo_ass_vie","Linxea_ass_vie","Linxea_per","Insee") ~ "Mensuelle",
-#            TRUE ~ "Exceptionnelle"
-#          )
-#   )
-# 
-# # SG Perso
-# sg_perso <- read.xlsx("input/Comptes/SG Perso/compte_SG_Perso_23_05_21_au_21_11_21.xlsx",
-#                           sheet = 1,startRow = 3,detectDates = TRUE)  %>% 
-#   mutate(date = as.Date(`Date.de.l'opération`, format =  "%d/%m/%Y")) %>%
-#   select(date,LIBELLE=Libellé,detail=`Détail.de.l'écriture`,MONTANT=`Montant.de.l'opération`)
-# 
-# sg_perso <- sg_perso %>% 
-#   mutate(type_operation = case_when
-#          (str_detect(LIBELLE, "VIR", negate = FALSE) ~ "Virement",
-#            str_detect(LIBELLE, "Relev", negate = FALSE) ~ "Releve Visa premier",
-#            str_detect(LIBELLE, "PRLV", negate = FALSE)|
-#              str_detect(LIBELLE, "COTISATION", negate = FALSE)|
-#              str_detect(LIBELLE, "PRELEVEMENT", negate = FALSE)|
-#              str_detect(LIBELLE, "FRAIS", negate = FALSE) ~ "Prelevement",
-#            str_detect(LIBELLE, "RETRAIT", negate = FALSE) ~ "Retrait",
-#            str_detect(LIBELLE, "CHEQUE", negate = FALSE) ~ "Cheque",
-#            str_detect(LIBELLE, "CARTE", negate = FALSE) ~ "CB",
-#            TRUE ~ "autre"
-#          ),
-#          sens_operation = ifelse(MONTANT >=0, "Revenu","Depense"),
-#          # Raison de l'opération
-#          raison_operation = case_when(
-#            str_detect(detail, 
-#              paste(c("JAZZ","PIANO RENOUV","FRAIS PAIEMENT HORS ZONE")
-#              ,collapse = "|"),negate = FALSE) ~ "Frais bancaire",
-#            str_detect(detail, "SURAVENIR", negate = FALSE) ~ "Linxea_ass_vie",
-#            str_detect(detail, "DRFIP ILE DE FRANCE ET DE PARIS", negate = FALSE) ~ "Insee",
-#            str_detect(detail, 
-#                       paste(c("Keolis Bordeaux","L AUTO D ARES")
-#                         ,collapse = "|"), negate = FALSE) ~ "Transport",
-#            str_detect(detail, 
-#                       paste(c("CHEZ HORTENSE")
-#                         ,collapse = "|"), negate = FALSE) ~ "Restaurant",
-#            
-#            str_detect(detail, 
-#                       paste(c("VIR PERM")
-#                         ,collapse = "|"), negate = FALSE) ~ "Epargne loisir",
-#            
-#            str_detect(toupper(detail), 
-#                       paste(c("VIR EUROPEEN EMIS LOGITEL POUR: KEMPF NICOLAS")
-#                             ,collapse = "|"), negate = FALSE) ~ "Boursorama Perso",
-#            str_detect(detail, 
-#                       paste(c("VIR EUROPEEN EMIS LOGITEL POUR: INDIVISION KEMPF DEMOUGEOT")
-#                             ,collapse = "|"), negate = FALSE) ~ "SG Joint",
-#            
-# 
-#            TRUE ~ "autre"
-#          )
-#          
-#          
-#          
-#   )
-
-
-
-
-
-
-
 # Bourso perso (refonte)
 bourso_perso <- read.xlsx("input/Comptes/Bourso perso/compte_PERSO_BOURSO_00040384302_du_01-09-2020_au_21-11-2021.xlsx",
                           sheet = 1,startRow = 4,detectDates = TRUE) %>% 
@@ -248,7 +147,7 @@ compte <- compte %>%
            str_detect(LIBELLE, "CHEQUE", negate = FALSE) ~ "Cheque",
            TRUE ~ "autre"
          ),
-         sens_operation = ifelse(MONTANT >=0, "Revenu","Depense"),
+         sens_operation = ifelse(MONTANT >0, "Revenu","Depense"),
          
          raison_operation = case_when(
            str_detect(LIBELLE,
@@ -263,7 +162,8 @@ compte <- compte %>%
                               "MC DONALD'S","MC DONALD S","LITALIEN","UBER    EATS","MC DO BEGLES","LE GET","AU CHAROLAIS","BRIME DE URZ","VENTS ET MAREES",
                               "LE CHIEN DE PAVLO","LE CAFE DU THEA","CHAI PASCAL","LES MILLE ET UNE NU","PIZZ LA FLOREN","LE LATINO","PRET A MANGER",
                               "VOISIN 11012","L OTENTIK","ROCHER MALENDUR","le petit gerard","LE JARDIN DE PA","GOUNES FOOD",
-                              "DJAM S PIZZAS","FINGER MOOD","AQUIT RESTAU","KFC VILLENAVE","MISS FOOD","ATMOSPHER","KFC")
+                              "DJAM S PIZZAS","FINGER MOOD","AQUIT RESTAU","KFC VILLENAVE","MISS FOOD","ATMOSPHER","KFC","LE LIBANAIS DE M",
+                              "VIR INST SAVEURS DU BOIS DU ROC")
                             ,collapse = "|"), negate = FALSE) ~ "Restaurant",
            str_detect(LIBELLE,
                       paste(c("ASF","ESCOTA","APRR","COFIROUTE","AUTOROUTES")
@@ -275,7 +175,8 @@ compte <- compte %>%
            str_detect(LIBELLE,
                       paste(c("CYRILLUS","LA HALLE","MAILLE SOUPLE","KIABI","ROUMEGOUX   GIL","MAGODIS","ROUMEGOUX   GIL","MURMURS","HERBES FAUVE","HEDERA",
                               "SUMUP   MIRREY","JACADI","SUMUP   UKA DISTRIBUTION","la source","AUBERT","BABY LUX","MICHEL S","CDISCOUNT 1 A   4",
-                              "MADIOT DUSSAUGE","BONOBO","VERTBAUDET","PETIT BATEAU")
+                              "MADIOT DUSSAUGE","BONOBO","VERTBAUDET","PETIT BATEAU","BEBE 9","BAHIA 4","SP   BIBSWORLD CO","BEBE AU NATUREL",
+                              "ATELIERROSEMOOD","MAMAN NATUR ELLE")
                             ,collapse = "|"), negate = FALSE) ~ "Habillement",
            str_detect(LIBELLE,
                       paste(c("DECATHLON","STEAM","CULTURA","HOT SPOT","Leetchi SA","COURSRA","PIP PRESSION","BASSIN LUMIERES",
@@ -283,7 +184,8 @@ compte <- compte %>%
                               "CINEMA JEAN EUS","L EMBARCADERE","SARL COMPTOIR DU","BACS GIRONDE ROY","K0307","LA TAVERNE DU MI","CT JJ BOSC",
                               "SC LA PLACE","SARL AXELLE","LA POSTE","PICWICTOYS","UNIVERSOTAKU FR","BK              2","MATY VAD",
                               "ANVAL","LE NOUVEAU COUCH","RODAME","CENTRE DE PLONG","KARUTRADE","SARL 3L","AMAZON EU SARL","RR LCS BAINS",
-                              "CHARLE S","INDIGO","AMAZON DIGITAL","FNACMARKETPLACE","GOOGLE Google Storage","EBB","CAVE LES VIGNERON")
+                              "CHARLE S","INDIGO","AMAZON DIGITAL","FNACMARKETPLACE","GOOGLE Google Storage","EBB","CAVE LES VIGNERON","ARGOS",
+                              "Stokke FR","ADEN   ANAIS LIMI")
                             ,collapse = "|"), negate = FALSE) ~ "Loisir",
            
            str_detect(LIBELLE,
@@ -294,7 +196,8 @@ compte <- compte %>%
                       paste(c("E.LECLERC","BOULANGERIE","CARREFOURMARKET","LE PAIN DE TRANCHOIR","FOURNIL ARS","LE PAIN DE TRANC",
                               "MAISON DES VIANDE","PICARD","LECLERC","BIOCOOP","SUPER U","TOQUE CUIVRE","ARCOUR","AU ROCHER D AVON","FOURNIL DE BEGLE",
                               "LIDL","CARREFOUR","MTPK SAINT JEAN","LES MILLE PAINS","U EXPRESS","INTERMARCHE","COTE BOULANGE","INTERMARCH","GEANT",
-                              "SOCCO SAINTE ROSE","YVONNE LIFESTOR3","VILLENAVE BIO","SUMUP   CABINET")
+                              "SOCCO SAINTE ROSE","YVONNE LIFESTOR3","VILLENAVE BIO","SUMUP   CABINET","FABRIQUE DE BEG",
+                              "KSM BOUCHERIE CH")
                             ,collapse = "|"), negate = FALSE) ~ "Alimentation",
            
            str_detect(LIBELLE,
@@ -317,13 +220,12 @@ compte <- compte %>%
            
            
            str_detect(LIBELLE,
-                      paste(c("Orange")
+                      paste(c("Orange","VIR SEPA ORANGE")
                             ,collapse = "|"), negate = FALSE) ~ "Orange",
            
            str_detect(LIBELLE,
                       paste(c("MINT ENERGIE","ELECTRICITE DE FRANCE")
                             ,collapse = "|"), negate = FALSE) ~ "Electricite",
-           
            
            str_detect(LIBELLE,
                       paste(c("SUEZ EAU")
@@ -337,9 +239,8 @@ compte <- compte %>%
                       paste(c("GMF ASSURANCES")
                             ,collapse = "|"), negate = FALSE) ~ "Assurance",
            
-           
            str_detect(LIBELLE,
-                      paste(c("Commission de Cr dit Logement","NOTARIAL VILLENAVE CHAMBER")
+                      paste(c("Commission de Cr dit Logement","NOTARIAL VILLENAVE CHAMBER","VIR Caution pret immo")
                             ,collapse = "|"), negate = FALSE) ~ "Maison",
            
            str_detect(LIBELLE,
@@ -356,7 +257,7 @@ compte <- compte %>%
            
            str_detect(LIBELLE, 
                       paste(c("FEU VERT","SIMPLAUTO","NORAUTO","STATIONNEMENTS","MTPK PESSAC","PARKING ST CHARL","AEROPOT BORDEAU",
-                              "AEROPORT GPE","STAT  BORDEAUX","HORODATEURS AUT")
+                              "AEROPORT GPE","STAT  BORDEAUX","HORODATEURS AUT","MTPK CITE MONDIA2","VIR Remboursement essence")
                             ,collapse = "|"), negate = FALSE) ~ "Voiture",
            
            str_detect(LIBELLE, 
@@ -373,7 +274,7 @@ compte <- compte %>%
            
            str_detect(LIBELLE,
                       paste(c("DR DEBORDE","MGEFI","DR PARRIEUS","C P A M  BORDEAUX","PHARMACIE BARRIER","GRANDE PHARMACIE","MAISON SANTE PRO",
-                              "PHARMA RIVETTE","PHARMACIE GARCIA")
+                              "PHARMA RIVETTE","PHARMACIE GARCIA","PHARMACIE")
                             ,collapse = "|"), negate = FALSE) ~ "Sante",
            
            str_detect(LIBELLE,
@@ -384,7 +285,6 @@ compte <- compte %>%
                       paste(c("TWINSEO")
                             ,collapse = "|"), negate = FALSE) ~ "Assurance_pret",
            
-           
            str_detect(LIBELLE,
                       paste(c("SNCF INTERNET")
                             ,collapse = "|"), negate = FALSE) ~ "Train",
@@ -393,35 +293,52 @@ compte <- compte %>%
                       paste(c("SPIRICA")
                             ,collapse = "|"), negate = FALSE) ~ "Linxea_per",
             
+           str_detect(LIBELLE,
+                      paste(c("DIRECTION GENERALE DES FINANCE")
+                            ,collapse = "|"), negate = FALSE) ~ "Impots",
            
+           str_detect(LIBELLE,
+                      paste(c("Virement interne depuis BOURSORAMA","VIR Alimentation PEA","VIR PERM POUR","VIR Assurance vie Marius")
+                            ,collapse = "|"), negate = FALSE) ~ "Epargne",
            
-           # str_detect(detail,
-           #            paste(c("VIR PERM")
-           #                  ,collapse = "|"), negate = FALSE) ~ "Epargne loisir",
-           # 
-           # str_detect(toupper(detail),
-           #            paste(c("VIR EUROPEEN EMIS LOGITEL POUR: KEMPF NICOLAS")
-           #                  ,collapse = "|"), negate = FALSE) ~ "Boursorama Perso",
-           # str_detect(detail,
-           #            paste(c("VIR EUROPEEN EMIS LOGITEL POUR: INDIVISION KEMPF DEMOUGEOT")
-           #                  ,collapse = "|"), negate = FALSE) ~ "SG Joint",
-
+           str_detect(LIBELLE,
+                      paste(c("VIR SEPA M  NICOLAS KEMPF","VIR Virement de Monsieur Nicolas KEMPF","VIR Virement de Monsieur Nicolas KEM",
+                              "VIR Regularisation du compte","VIR EUROPEEN EMIS LOGITEL POUR  KEMPF","VIR INST KEMPF NICOLAS",
+                              "M  NICOLAS KEMPF","VIR Virement interne","VIR EUROPEEN EMIS LOGITEL POUR  INDIVISION KEMPF")
+                            ,collapse = "|"), negate = FALSE) ~ "Virement_interne",
+           
+           str_detect(LIBELLE,
+                      paste(c("VIR SEPA MELLE DEMOUGEOT LISE","VIR INST DEMOUGEOT LISE","VIR EUROPEEN EMIS LOGITEL POUR  Lise DEMOUGEOT",
+                              "VIR SEPA CCCE Lise ")
+                            ,collapse = "|"), negate = FALSE) ~ "Virement_Lise",
+           
+           str_detect(LIBELLE,
+                      paste(c("VIR EUROPEEN EMIS LOGITEL POUR  M  Julien GLENISSON","VIR SEPA MME MICHAUD DANIELE","VIR SEPA M OU MME DEMOUGEOT OLIVIER",
+                              "VIR Virement de Madame Joelle DEMOUG")
+                            ,collapse = "|"), negate = FALSE) ~ "Virement_Exterieur",
+           
+           str_detect(LIBELLE,
+                      paste(c("RETRAIT DAB","CHEQUE")
+                            ,collapse = "|"), negate = FALSE) ~ "Aucune",
 
            TRUE ~ "autre"
          )
   )
 
-
-
-
 # Revenus hors virements interne ou avec SG
-rev <- bourso_perso %>% 
-  filter(sens_operation == "Revenu" & !raison_operation %in% c("SG NK","Interne Bourso")) %>% 
-  select(date, everything()) %>% 
+rev <- compte %>% 
+  filter(sens_operation == "Revenu" & !raison_operation %in% c("Virement_Exterieur","Virement_Lise","Virement_interne","Epargne","Avion") & 
+           !str_detect(LIBELLE,
+                      paste(c("VIR Caution pret immo")
+                            ,collapse = "|"), negate = FALSE) 
+           ) %>% 
   mutate(type_revenu = case_when(
-    regularite_operation == "Mensuelle" & str_detect(LIBELLE, "DRFIP ILE DE FRANCE ET DE PARIS", negate = FALSE) ~ "Paye",
-    TRUE ~ "Exceptionnel"
-  )
+    raison_operation %in% c("Insee") ~ "Paye",
+    raison_operation %in% c("Sante","Netflix","Eau","Aucune") | str_detect(LIBELLE,
+               paste(c("AVOIR","SEPA ORANGE","VIR SEPA OFF  NOTARIAL VILLENAVE CHAMBER")
+                     ,collapse = "|"), negate = FALSE) ~ "Remboursement",
+    TRUE ~ "autre"),
+    type_revenu = factor(type_revenu,levels = c("Autre","Remboursement","Paye"))
   ) %>% 
   group_by(month(date),type_revenu) %>%
   summarise(MONTANT = sum(MONTANT)) %>%
