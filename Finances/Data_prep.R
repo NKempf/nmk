@@ -128,6 +128,8 @@ visa_premier <- read.xlsx("input/Comptes/Bourso perso/carte_VISA_PREMIER_4979___
 # Synthèse des comptes
 compte <- bourso_perso %>% 
   bind_rows(bourso_joint,sg_perso,sg_joint,visa_premier) %>% 
+  mutate(ponderation = ifelse(
+    compte %in% c("SG joint","Bourso joint"), 0.5,1)) %>% 
   arrange(date)
 
 
@@ -346,7 +348,7 @@ rev <- compte %>%
 
 rev2 <- rev %>% 
   group_by(month(date),type_revenu) %>%
-  summarise(MONTANT = sum(MONTANT)) %>%
+  summarise(MONTANT = sum(MONTANT * ponderation)) %>%
   rename(mois = `month(date)`)
 
 # Graphique des revenus
@@ -374,12 +376,89 @@ revprinc <- rev %>%
 tab_rev <- datatable(revprinc,rownames = FALSE,colnames = c("Date","Compte","Raison","Montant (€)","Origine","Type"))
 
 
+# V. Dépenses----
+depenses <- compte %>% 
+  filter(sens_operation == "Depense" & !raison_operation %in% c("Virement_Exterieur","Virement_Lise","Virement_interne","Epargne","Avion")
+         # & 
+         #   !str_detect(LIBELLE,
+         #               paste(c("VIR Caution pret immo")
+         #                     ,collapse = "|"), negate = FALSE) 
+  )  %>% 
+  mutate(type_depense = case_when(
+    raison_operation %in% c("Ammeublement","Assurance","Assurance_pret","Bricolage","Eau","Electricite","Gaz","Jardin","Maison","Ménage","Pret_immo") ~ "Logement",
+    raison_operation %in% c("Essence","Voiture") ~ "Voiture",
+    raison_operation %in% c("Alimentation") ~ "Alimentation",
+    raison_operation %in% c("Coiffeur","Habillement") ~ "Soin_personne",
+    raison_operation %in% c("Frais_bancaire") ~ "Banque",
+    raison_operation %in% c("Hotel","Peage","Train","Transport") ~ "Voyage_transport",
+    raison_operation %in% c("Impots") ~ "Impots",
+    raison_operation %in% c("Linxea_ass_vie","Linxea_per","Nalo_ass_vie") ~ "Epargne",
+    raison_operation %in% c("Loisir","Netflix","Orange","Moto","Aucune") ~ "Loisir",
+    raison_operation %in% c("Restaurant") ~ "Restaurant",
+    raison_operation %in% c("Sante") ~ "Sante",
+    TRUE ~ "autre"
+  ),
+  
+  regularite_depense = case_when(
+    raison_operation %in% c("Assurance","Assurance_pret","Eau","Electricite","Gaz","Linxea_ass_vie","Linxea_per","Ménage",
+                            "Nalo_ass_vie","Netflix","Orange","Pret_immo") ~ "Mensuel",
+    TRUE ~ "Autre"
+  )
+  )
+
+dep2 <- depenses %>% 
+  group_by(month(date),type_depense) %>% 
+  summarise(
+    MONTANT = abs(sum(MONTANT * ponderation))
+  ) %>%
+  rename(mois = `month(date)`) %>% 
+  mutate(mois = factor(as.character(mois)))
 
 
 
+# Graphique des revenus
+g4 <- ggplot(dep2, aes(fill=type_depense, y=MONTANT, x=mois)) + 
+  geom_bar(position="stack", stat="identity") +
+  labs(
+    x = "Mois", 
+    y = "Montant (€)", 
+    fill = "Type",
+    title = "Dépenses par mois NK"
+  )
+
+g4
 
 
+dep3 <- depenses %>% 
+  filter(regularite_depense == "Mensuel") %>% 
+  mutate(
+    type_depense_reguliere = case_when(
+      raison_operation %in% c("Assurance","Assurance_pret","Pret_immo","Ménage") ~ "Maison",
+      raison_operation %in% c("Eau","Electricite","Gaz") ~ "Energie_Eau",
+      raison_operation %in% c("Linxea_ass_vie","Linxea_per","Nalo_ass_vie") ~ "Epargne",
+      raison_operation %in% c("Netflix","Orange") ~ "TIC",
+      TRUE ~ "autre"
+    )
+  ) %>% 
+  group_by(month(date),type_depense_reguliere) %>% 
+  summarise(
+    MONTANT = abs(sum(MONTANT*ponderation))
+  ) %>%
+  rename(mois = `month(date)`) %>% 
+  mutate(mois = factor(as.character(mois)),
+         pct = round(100*MONTANT / sum(MONTANT),2))
 
+g5 <- ggplot(dep3, aes(fill=type_depense_reguliere, y=MONTANT, x=mois)) + 
+  geom_bar(position="stack", stat="identity") +
+  # geom_text(aes(label = pct)) +
+  labs(
+    x = "Mois", 
+    y = "Montant (€)", 
+    fill = "Type",
+    title = "Dépenses régulières par mois NK"
+  )
+
+ggplotly(g5)
 
 
 
