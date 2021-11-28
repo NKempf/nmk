@@ -66,16 +66,16 @@ g2
 
 ggplotly(g2)
 
-# II. Dépenses exceptionnelles----
-dep_excep <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "dep_excep",startRow = 2,detectDates = TRUE)
-
-dep2 <- dep_excep %>% 
-  filter(month(date) == 10) %>% 
-  arrange(desc(montant)) %>% 
-  slice(1:5) %>% 
-  adorn_totals("row") 
-
-datatable(dep2,rownames = FALSE)
+# # II. Dépenses exceptionnelles----
+# dep_excep <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "dep_excep",startRow = 2,detectDates = TRUE)
+# 
+# dep2 <- dep_excep %>% 
+#   filter(month(date) == 10) %>% 
+#   arrange(desc(montant)) %>% 
+#   slice(1:5) %>% 
+#   adorn_totals("row") 
+# 
+# datatable(dep2,rownames = FALSE)
 
 
 # III. Relevés de comptes----
@@ -150,8 +150,7 @@ compte <- compte %>%
            str_detect(LIBELLE, "CHEQUE", negate = FALSE) ~ "Cheque",
            TRUE ~ "autre"
          ),
-         sens_operation = ifelse(MONTANT >0, "Revenu","Depense"),
-         
+
          raison_operation = case_when(
            str_detect(LIBELLE,
                       paste(c("JAZZ","PIANO RENOUV","FRAIS PAIEMENT HORS ZONE","FRAIS CB VISA ULTIM","COTISATION ANNUELLE CARTE Visa Premier",
@@ -325,7 +324,14 @@ compte <- compte %>%
                             ,collapse = "|"), negate = FALSE) ~ "Aucune",
 
            TRUE ~ "autre"
-         )
+         ),
+    
+    sens_operation = case_when(
+      MONTANT > 0 ~ "Revenu",
+      raison_operation %in% c("Linxea_per","Linxea_ass_vie","Nalo_ass_vie", "Epargne") & MONTANT <= 0 ~ "Epargne",
+      raison_operation %in% c("Virement_Exterieur","Virement_Lise","Virement_interne","Epargne","Avion") & MONTANT <= 0 ~ "Virements interne",
+      !raison_operation %in% c("Linxea_per","Linxea_ass_vie","Nalo_ass_vie", "Epargne") & MONTANT <= 0 ~ "Depense",
+      TRUE ~ "aurtre"),
   )
 
 
@@ -449,15 +455,14 @@ depenses <- compte %>%
   )
 
 dep2 <- depenses %>% 
-  group_by(month(date),type_depense) %>% 
+  mutate(mois = floor_date(date, unit = "month")) %>% 
+  group_by(mois,type_depense) %>% 
   summarise(
     MONTANT = abs(sum(MONTANT * ponderation))
-  ) %>%
-  rename(mois = `month(date)`) %>% 
-  mutate(mois = factor(as.character(mois)))
+  )
 
-# Graphique des revenus
-g4 <- ggplot(dep2, aes(fill=type_depense, y=MONTANT, x=mois)) + 
+# G1 : dépenses par mois au virements
+dep.g1 <- ggplot(dep2, aes(fill=type_depense, y=MONTANT, x=mois)) + 
   geom_bar(position="stack", stat="identity") +
   labs(
     x = "Mois", 
@@ -465,7 +470,19 @@ g4 <- ggplot(dep2, aes(fill=type_depense, y=MONTANT, x=mois)) +
     fill = "Type",
     title = "Dépenses par mois NK"
   )
-g4
+dep.g1
+
+# G2 : détails des dépenses par mois
+mois.filtre <- 10
+
+dep.details <- depenses %>% 
+  select(-sens_operation,-ponderation,-type_operation) %>% 
+  filter(month(date) == mois.filtre & abs(MONTANT) >= 100) %>% 
+  arrange(MONTANT) %>% 
+  adorn_totals("row") 
+
+dep.g2 <- datatable(dep.details,rownames = FALSE,colnames = c("Date","Compte","Raison","Montant (€)","Origine","Type"))
+dep.g2
 
 
 dep3 <- depenses %>% 
@@ -505,12 +522,23 @@ save(compte,fin2,file = "input/Comptes/synthese_fin.RData")
 portfolio <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "portfolio",startRow = 2,detectDates = TRUE)
 
 
+# Origine dividende
+divi_g2 <- divi %>% 
+group_by(entreprise) %>% 
+  summarise(
+    dividende = sum(total)
+  ) %>% 
+  mutate(dividende.pct = round(100*dividende / sum(dividende),2)) %>% 
+  arrange(desc(dividende.pct))
 
 
-
-
-
-
+divi.g2 <- divi_g2 %>% 
+  plot_ly(labels = ~entreprise, values = ~dividende) %>% 
+  add_pie(hole = 0.6) %>% 
+  layout(title = "Origine des dividendes cumulés",  showlegend = F,
+                                       xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                                       yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+divi.g2
 
 
 # Synthèse globale

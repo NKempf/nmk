@@ -29,6 +29,7 @@ ui <- dashboardPage(
     menuItem("Patrimoine", tabName = "patrimoine", icon = icon("landmark")),
     menuItem("Revenus", tabName = "revenus", icon = icon("coins")),
     menuItem("Depenses", tabName = "depenses", icon = icon("credit-card")),
+    menuItem("Epargne", tabName = "epargne", icon = icon("piggy-bank")),
     menuItem("PEA", tabName = "pea", icon = icon("chart-line"))
     )
 
@@ -79,14 +80,32 @@ ui <- dashboardPage(
       # Third tab content
       tabItem(tabName = "depenses",
               fluidRow(
-                box(plotlyOutput("g4")),
+                box(plotlyOutput("dep.g1")),
                 # box(plotlyOutput("g2")),
+                box(DTOutput("dep.g2"))
+                
+              ),
+              fluidRow(
                 box(plotlyOutput("g5"))
+              )
+              
+              
+              
+      ),
+      # 4th tab content
+      tabItem(tabName = "pea",
+              fluidRow(
+                box(plotlyOutput("divi.g2")),
+                # box(plotlyOutput("g2")),
+                # box(plotlyOutput("g5"))
               ),
               
               
               
       )
+      
+      
+      
     )
     
   ) # end body
@@ -148,15 +167,24 @@ server <- function(input, output) {
     ggplotly(rev.g2)
   })
   
-  output$g4 <- renderPlotly({
-    ggplotly(g4)
+  output$dep.g1 <- renderPlotly({
+    ggplotly(dep.g1)
   })
+  
+  
+  output$dep.g2 = renderDT(
+    dep.g2, options = list(lengthChange = FALSE)
+  )
   
   output$g5 <- renderPlotly({
     ggplotly(g5)
   })
   
   
+  
+  output$divi.g2 <- renderPlotly({
+    divi.g2
+  })
   
   
 }
