@@ -419,8 +419,6 @@ dep2 <- depenses %>%
   rename(mois = `month(date)`) %>% 
   mutate(mois = factor(as.character(mois)))
 
-
-
 # Graphique des revenus
 g4 <- ggplot(dep2, aes(fill=type_depense, y=MONTANT, x=mois)) + 
   geom_bar(position="stack", stat="identity") +
@@ -430,7 +428,6 @@ g4 <- ggplot(dep2, aes(fill=type_depense, y=MONTANT, x=mois)) +
     fill = "Type",
     title = "Dépenses par mois NK"
   )
-
 g4
 
 
@@ -467,6 +464,8 @@ ggplotly(g5)
 
 
 
+
+save(compte,fin2,file = "input/Comptes/synthese_fin.RData")
 
 
 # Portefeuille Boursier----
