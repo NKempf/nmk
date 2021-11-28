@@ -1,4 +1,4 @@
-# TODO
+# Finances NK
 
 library(openxlsx)
 library(tidyverse)
@@ -24,7 +24,7 @@ fin2 <- fin %>%
 g1 <- ggplot(fin2, aes(x=date,group = compte, y=value,color = compte)) +
   geom_line() +
   scale_x_date(date_labels = "%Y %b",date_breaks = "1 month") +
-  theme_ipsum() +
+  # theme_ipsum() +
   theme(axis.text = element_text( 
     angle = 90, 
     face=3)
@@ -50,7 +50,7 @@ fin_marius <- fin %>%
 g2 <- ggplot(fin_marius, aes(x=date,group = compte, y=value,color = compte)) +
   geom_line() +
   scale_x_date(date_labels = "%Y %b",date_breaks = "1 month") +
-  theme_ipsum() +
+  # theme_ipsum() +
   theme(axis.text = element_text( 
     angle = 90, 
     face=3)
@@ -389,7 +389,7 @@ depenses <- compte %>%
     raison_operation %in% c("Essence","Voiture") ~ "Voiture",
     raison_operation %in% c("Alimentation") ~ "Alimentation",
     raison_operation %in% c("Coiffeur","Habillement") ~ "Soin_personne",
-    raison_operation %in% c("Frais_bancaire") ~ "Banque",
+    raison_operation %in% c("Frais bancaire") ~ "Banque",
     raison_operation %in% c("Hotel","Peage","Train","Transport") ~ "Voyage_transport",
     raison_operation %in% c("Impots") ~ "Impots",
     raison_operation %in% c("Linxea_ass_vie","Linxea_per","Nalo_ass_vie") ~ "Epargne",
@@ -402,8 +402,13 @@ depenses <- compte %>%
   regularite_depense = case_when(
     raison_operation %in% c("Assurance","Assurance_pret","Eau","Electricite","Gaz","Linxea_ass_vie","Linxea_per","Ménage",
                             "Nalo_ass_vie","Netflix","Orange","Pret_immo") ~ "Mensuel",
-    TRUE ~ "Autre"
-  )
+    TRUE ~ "Exceptionnelle"
+  ),
+  
+  # Correction : virement ponctuel sur assurance vie
+  regularite_depense = ifelse(
+    raison_operation %in% c("Linxea_ass_vie","Linxea_per","Nalo_ass_vie") & abs(MONTANT) >= 1000,"Exceptionnelle", regularite_depense)
+  
   )
 
 dep2 <- depenses %>% 

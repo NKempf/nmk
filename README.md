@@ -28,6 +28,7 @@ Outils d'analyse d'un portefeuille financier
 * [Portfolio Management with R, Enrico Schumann, 2021](http://enricoschumann.net/R/packages/PMwR/manual/PMwR.html)
 * [Tidy Portfoliomanagement in R, Sebastian Stöckl, 2018](https://bookdown.org/sstoeckl/Tidy_Portfoliomanagement_in_R/)
 * [Backtesting Strategies with R, Tim Trice, 2016](https://timtrice.github.io/backtesting-strategies/index.html)
+* [Mastering Shiny, Hadley Wickham, 2020](https://mastering-shiny.org/preface.html)
 
 ## Data provider
 

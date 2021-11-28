@@ -1,6 +1,13 @@
 ## app.R ##
+
+# Ressource : https://mastering-shiny.org/preface.html
+
 library(shinydashboard)
-# library(shinyWidgets)
+library(shinyWidgets)
+
+# Données
+load("input/Comptes/synthese_fin.RData")
+
 
 # Liste des mois
 mois <- c(1:12)
@@ -19,8 +26,7 @@ ui <- dashboardPage(
       choices = month.abb,
       selected = month.abb[c(4, 8)]
     )
-    
-    
+
   ),
   dashboardBody(
     # Boxes need to be put in a row (or column)
@@ -76,6 +82,27 @@ ui <- dashboardPage(
 
 server <- function(input, output) {
 
+# SERVER Reactive Values----
+  rv <- reactiveValues(
+    compte.db = compte
+    fin.db = fin2
+  )
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   output$g1 <- renderPlotly({
     ggplotly(g1)
   })
