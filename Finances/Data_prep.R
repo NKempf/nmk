@@ -343,16 +343,33 @@ rev <- compte %>%
                paste(c("AVOIR","SEPA ORANGE","VIR SEPA OFF  NOTARIAL VILLENAVE CHAMBER")
                      ,collapse = "|"), negate = FALSE) ~ "Remboursement",
     TRUE ~ "autre"),
-    type_revenu = factor(type_revenu,levels = c("Autre","Remboursement","Paye"))
+
   ) 
 
+# Portefeuille Boursier
+portfolio <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "portfolio",startRow = 2,detectDates = TRUE)
+
+# Focus dividendes
+divi <- portfolio %>% 
+  filter(tolower(action) == "dividendes")
+
+
+# IV.1. Revenus totaux
 rev2 <- rev %>% 
-  group_by(month(date),type_revenu) %>%
-  summarise(MONTANT = sum(MONTANT * ponderation)) %>%
-  rename(mois = `month(date)`)
+  select(date,type_revenu,MONTANT,ponderation) %>% 
+  bind_rows(
+    divi %>% 
+      select(date,MONTANT = total) %>% 
+      mutate(type_revenu = "Dividendes",ponderation = 1)
+  ) %>% 
+  mutate(mois = floor_date(date, unit = "month")) %>% 
+  group_by(mois,type_revenu) %>%
+  summarise(MONTANT = sum(MONTANT * ponderation)) %>% 
+  mutate(type_revenu = factor(type_revenu,levels = c("Autre","Dividendes","Remboursement","Paye")))
+  
 
 # Graphique des revenus
-g3 <- ggplot(rev2, aes(fill=type_revenu, y=MONTANT, x=mois)) + 
+rev.g1 <- ggplot(rev2, aes(fill=type_revenu, y=MONTANT, x=mois)) + 
   geom_bar(position="stack", stat="identity")+
   labs(
     x = "Mois", 
@@ -360,11 +377,9 @@ g3 <- ggplot(rev2, aes(fill=type_revenu, y=MONTANT, x=mois)) +
     fill = "Type",
     title = "Revenus par mois NK"
   )
+rev.g1
 
-g3
-
-# Les principaux revenus par mois
-
+# IV.2. le détail des revenus du mois
 mois.filtre <- 10
 
 revprinc <- rev %>% 
@@ -374,6 +389,28 @@ revprinc <- rev %>%
   adorn_totals("row") 
 
 tab_rev <- datatable(revprinc,rownames = FALSE,colnames = c("Date","Compte","Raison","Montant (€)","Origine","Type"))
+
+# IV.3. Suivi des dividendes
+divi_g1 <- divi %>% 
+  mutate(mois = floor_date(date, unit = "month")) %>% 
+  group_by(mois) %>% 
+  summarise(
+    dividendes = sum(total)) %>% 
+  mutate(
+    dividendes_cumules = cumsum(dividendes)
+  ) 
+
+rev.g2 <- ggplot(divi_g1) + 
+  geom_bar(aes(y=dividendes, x=mois), stat="identity") +
+  geom_line(aes(y=dividendes_cumules, x=mois),colour = "#fed766") +
+  labs(
+    x = "Mois", 
+    y = "Montant (€)", 
+    # fill = "Type",
+    title = "Dividendes par mois NK"
+  )
+ggplotly(rev.g2)
+
 
 
 # V. Dépenses----
@@ -462,14 +499,19 @@ g5 <- ggplot(dep3, aes(fill=type_depense_reguliere, y=MONTANT, x=mois)) +
 
 ggplotly(g5)
 
-
-
-
 save(compte,fin2,file = "input/Comptes/synthese_fin.RData")
 
-
-# Portefeuille Boursier----
+# VI. Portefeuille Boursier----
 portfolio <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "portfolio",startRow = 2,detectDates = TRUE)
+
+
+
+
+
+
+
+
+
 
 # Synthèse globale
 portofolio.synth <- portfolio %>% 
