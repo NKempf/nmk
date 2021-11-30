@@ -10,6 +10,7 @@ library(shinydashboard)
 library(shinyWidgets)
 library(DT)
 library(plotly)
+library(quantmod)
 
 # I. Patrimoine----
 fin <- read.xlsx("input/fin_16_11_2021.xlsx",detectDates = T,sheet = "patrimoine") %>% 
@@ -522,7 +523,7 @@ save(compte,fin2,file = "input/Comptes/synthese_fin.RData")
 portfolio <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "portfolio",startRow = 2,detectDates = TRUE)
 
 
-# Origine dividende
+# Origine des dividendes
 divi_g2 <- divi %>% 
 group_by(entreprise) %>% 
   summarise(
@@ -535,10 +536,61 @@ group_by(entreprise) %>%
 divi.g2 <- divi_g2 %>% 
   plot_ly(labels = ~entreprise, values = ~dividende) %>% 
   add_pie(hole = 0.6) %>% 
-  layout(title = "Origine des dividendes cumulés",  showlegend = F,
+  layout(title = "Origine des dividendes cumulés (€)",  showlegend = F,
                                        xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
                                        yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
 divi.g2
+
+# Portefeuille PEA
+p2 <- portfolio %>% 
+  filter(!entreprise %in% c("Cash") & !action %in% c("Dividendes")) %>% 
+  mutate(quantite = ifelse(action == "Vente",-quantite,quantite))
+
+# Plus ou moins value
+p2.quant <- p2 %>% 
+  group_by(entreprise) %>%
+  summarise(
+    quantite = sum(quantite),
+  )
+
+performance.achat.vente <- p2 %>% 
+  group_by(entreprise,action) %>%
+  summarise(
+    total = sum(total)
+  ) %>% 
+ spread("action","total") %>% 
+  left_join(p2.quant) %>% 
+  mutate(
+    # Vente = ifelse(is.na(Vente),0,Vente),
+         plus_moins_value = Vente - Achat
+         ) %>% 
+  filter(!is.na(plus_moins_value))
+    
+
+p2 %>% 
+  filter(entreprise %in% p2.quant$entreprise[p2.quant$quantite>0]) %>% 
+  group_by(entreprise,action) %>%
+  summarise(
+    quantite = sum(quantite),
+    total = sum(total)
+  ) %>% 
+  rename(achat = total)
+
+date.debut <- today() - 180
+date.estimation <- today() - 1
+getSymbols("TTE", from = date.debut,
+           to = date.estimation,warnings = FALSE,
+           auto.assign = TRUE)
+currency_pair <- "USD/EUR"
+getSymbols(currency_pair, src = "oanda")
+
+# A faire : apprendre à manipuler les XTS avec le tidyverse...
+# Calculer ensuite la valeur d'aujourd'hui du portefeuille pour comparer avec la valeur d'achat. 
+# Possibilité d'automatiser avec uniquement les dates d'achat et de vente et les quantités => idée à explorer
+# Représentation graphique de la valeur des assets
+merge(TTE,USDEUR) %>% 
+  filter(date.estimation)
+
 
 
 # Synthèse globale
@@ -562,8 +614,23 @@ screener <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "screener",startRow = 
 
 
 
+# test
+library(tidyquant)
 
 
+options("getSymbols.warning4.0"=FALSE)
+options("getSymbols.yahoo.warning"=FALSE)
+# Downloading Apple price using quantmod
+
+getSymbols("AAPL", from = '2017-01-01',
+           to = "2018-03-01",warnings = FALSE,
+           auto.assign = TRUE)
+
+# Create a currency_pair object
+currency_pair <- "USD/EUR"
+
+# Load British Pound to Canadian Dollar exchange rate data
+getSymbols(currency_pair, src = "oanda")
 
 
 
