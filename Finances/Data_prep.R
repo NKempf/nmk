@@ -390,7 +390,7 @@ rev.g1
 mois.filtre <- 10
 
 revprinc <- rev %>% 
-  select(-type_operation,-sens_operation) %>% 
+  select(-type_operation,-sens_operation,-ponderation) %>% 
   filter(month(date) == mois.filtre) %>% 
   arrange(desc(MONTANT)) %>% 
   adorn_totals("row") 
@@ -417,7 +417,6 @@ rev.g2 <- ggplot(divi_g1) +
     title = "Dividendes par mois NK"
   )
 ggplotly(rev.g2)
-
 
 
 # V. Dépenses----
@@ -482,7 +481,7 @@ dep.details <- depenses %>%
   arrange(MONTANT) %>% 
   adorn_totals("row") 
 
-dep.g2 <- datatable(dep.details,rownames = FALSE,colnames = c("Date","Compte","Raison","Montant (€)","Origine","Type"))
+dep.g2 <- datatable(dep.details,rownames = FALSE,colnames = c("Date","Compte","Montant (€)","Raison","Origine","Type"))
 dep.g2
 
 
@@ -553,6 +552,11 @@ p2.quant <- p2 %>%
     quantite = sum(quantite),
   )
 
+
+# A faire : estimer la valorisation du portefeuille et la répartition par actif 
+# A faire : calculer correctement la performance d'un actif
+# A faire : estimer la performance d'un actif
+
 performance.achat.vente <- p2 %>% 
   group_by(entreprise,action) %>%
   summarise(
@@ -579,7 +583,7 @@ p2 %>%
 date.debut <- today() - 180
 date.estimation <- today() - 1
 getSymbols("TTE", from = date.debut,
-           to = date.estimation,warnings = FALSE,
+           to = today(),warnings = FALSE,
            auto.assign = TRUE)
 currency_pair <- "USD/EUR"
 getSymbols(currency_pair, src = "oanda")
@@ -588,8 +592,24 @@ getSymbols(currency_pair, src = "oanda")
 # Calculer ensuite la valeur d'aujourd'hui du portefeuille pour comparer avec la valeur d'achat. 
 # Possibilité d'automatiser avec uniquement les dates d'achat et de vente et les quantités => idée à explorer
 # Représentation graphique de la valeur des assets
-merge(TTE,USDEUR) %>% 
-  filter(date.estimation)
+
+
+TTE[date.estimation]
+
+
+df <- merge(TTE,USDEUR,all.x = TRUE) %>% 
+  as.data.frame()
+  
+df2 <- df %>% 
+  mutate(date = rownames(df),
+         action = "TTE") %>% 
+  # filter(!is.na(TTE.Close)) %>%
+  filter(date == date.estimation)
+
+
+
+
+
 
 
 
@@ -633,4 +653,4 @@ currency_pair <- "USD/EUR"
 getSymbols(currency_pair, src = "oanda")
 
 
-
+# https://rpubs.com/Sergio_Garcia/managing_financial_data_r
