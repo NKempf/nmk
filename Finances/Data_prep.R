@@ -136,6 +136,11 @@ compte <- bourso_perso %>%
 
 compte <- compte %>% 
   mutate(LIBELLE = str_replace_all(LIBELLE, "[[:punct:]]", " "), # Suppression des caractères spéciaux
+         
+         # Gestion des dates 
+         mois = floor_date(date, unit = "month"),
+         annee = floor_date(date, unit = "year"),
+         
     
     type_operation = case_when(str_detect(LIBELLE, 
                      paste(c("VIR")
@@ -494,17 +499,16 @@ dep3 <- depenses %>%
       raison_operation %in% c("Linxea_ass_vie","Linxea_per","Nalo_ass_vie") ~ "Epargne",
       raison_operation %in% c("Netflix","Orange") ~ "TIC",
       TRUE ~ "autre"
-    )
+    ),
+    mois = floor_date(date, unit = "month")
   ) %>% 
-  group_by(month(date),type_depense_reguliere) %>% 
+  group_by(mois,type_depense_reguliere) %>% 
   summarise(
     MONTANT = abs(sum(MONTANT*ponderation))
   ) %>%
-  rename(mois = `month(date)`) %>% 
-  mutate(mois = factor(as.character(mois)),
-         pct = round(100*MONTANT / sum(MONTANT),2))
+  mutate(pct = round(100*MONTANT / sum(MONTANT),2))
 
-g5 <- ggplot(dep3, aes(fill=type_depense_reguliere, y=MONTANT, x=mois)) + 
+dep.g3 <- ggplot(dep3, aes(fill=type_depense_reguliere, y=MONTANT, x=mois)) + 
   geom_bar(position="stack", stat="identity") +
   # geom_text(aes(label = pct)) +
   labs(
@@ -514,13 +518,35 @@ g5 <- ggplot(dep3, aes(fill=type_depense_reguliere, y=MONTANT, x=mois)) +
     title = "Dépenses régulières par mois NK"
   )
 
-ggplotly(g5)
+ggplotly(dep.g3)
 
 save(compte,fin2,file = "input/Comptes/synthese_fin.RData")
 
+# Epargne
+
+effort_epargne <- compte %>% 
+  filter(raison_operation %in% c("Linxea_ass_vie","Linxea_per","Nalo_ass_vie")) %>% 
+  group_by(mois,raison_operation) %>% 
+  summarise(
+    MONTANT = abs(sum(MONTANT*ponderation))
+  ) %>%
+  mutate(pct = round(100*MONTANT / sum(MONTANT),2))
+
+dep.g4 <- ggplot(effort_epargne, aes(fill=raison_operation, y=MONTANT, x=mois)) + 
+  geom_bar(position="stack", stat="identity") +
+  # geom_text(aes(label = pct)) +
+  labs(
+    x = "Mois", 
+    y = "Montant (€)", 
+    fill = "Type",
+    title = "Effort d'épargne par mois NK"
+  )
+
+ggplotly(dep.g4)
+
+
 # VI. Portefeuille Boursier----
 portfolio <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "portfolio",startRow = 2,detectDates = TRUE)
-
 
 # Origine des dividendes
 divi_g2 <- divi %>% 
@@ -552,8 +578,24 @@ p2.quant <- p2 %>%
     quantite = sum(quantite),
   )
 
-
 # A faire : estimer la valorisation du portefeuille et la répartition par actif 
+
+
+
+
+getSymbols(Symbols = "ETL.PA", 
+           src = "yahoo", 
+           index.class = "POSIXct",
+           from = "2020-01-01", 
+           to = today(), 
+           adjust = TRUE)
+
+
+
+
+
+
+
 # A faire : calculer correctement la performance d'un actif
 # A faire : estimer la performance d'un actif
 
