@@ -13,12 +13,15 @@ library(plotly)
 library(quantmod)
 
 # I. Patrimoine----
-fin <- read.xlsx("input/fin_16_11_2021.xlsx",detectDates = T,sheet = "patrimoine") %>% 
-  mutate(date2 = format(date, "%Y-%m"))
+fin <- read.xlsx("input/Finances/fin_26_01_2022.xlsx",detectDates = T,sheet = "patrimoine") %>% 
+  mutate(
+    date = as.Date.character(date,format="%d/%m/%Y"),
+    date2 = format(date, "%Y-%m")
+    )
 
 fin2 <- fin %>% 
-  select(date,BFM,LDD,PEA,Linxea_ass_vie, Nalo_ass_vie, PER, CTO, Maison ,livret_bourso) %>% 
-  mutate(Epargne.totale = BFM + LDD + PEA + Linxea_ass_vie + Nalo_ass_vie + PER + CTO + Maison + livret_bourso) %>% 
+  select(date,BFM,LDD,PEA,Linxea_ass_vie, Nalo_ass_vie, PER, CTO, Maison, Vanster ,livret_bourso) %>% 
+  mutate(Epargne.totale = BFM + LDD + PEA + Linxea_ass_vie + Nalo_ass_vie + PER + CTO + Maison + livret_bourso + Vanster) %>% 
   gather(compte,value,-date)
 
 # Graph : évolution du patrimoine 
