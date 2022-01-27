@@ -85,39 +85,69 @@ ggplotly(g2)
 # III. Relevés de comptes----
 
 # Bourso perso (refonte)
-bourso_perso <- read.xlsx("input/Comptes/Bourso perso/compte_PERSO_BOURSO_00040384302_du_01-09-2020_au_21-11-2021.xlsx",
-                          sheet = 1,startRow = 4,detectDates = TRUE) %>% 
-  mutate(date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
+bourso_perso <- bind_rows(
+  read.xlsx("input/Comptes/Bourso perso/compte_PERSO_BOURSO_00040384302_du_01-09-2020_au_21-11-2021.xlsx",
+            sheet = 1,startRow = 4,detectDates = TRUE),
+  read.xlsx("input/Comptes/Bourso perso/compte_PERSO_BOURSO_00040384302_du_21-11-2021_au_26-01-2022.xlsx",
+            sheet = 1,startRow = 4,detectDates = TRUE)
+) %>% 
+  mutate(
+    doublons = duplicated(paste0(DATE.OPERATION,LIBELLE,MONTANT)),
+    date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
          compte = "Bourso perso"
   ) %>% 
-  select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION) %>% 
+  select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION,-doublons) %>% 
   select(date, compte,everything()) %>% 
   filter(!str_detect(LIBELLE, "Relev", negate = FALSE)) # Suppression des dépenses de CD premier car intégration dans la table globale
 
 # Bourso Joint
-bourso_joint <- read.xlsx("input/Comptes/Bourso Joint/compte_JOINT_BOURSO_00040482911_du_05-02-2021_au_21-11-2021.xlsx",
-                          sheet = 1,startRow = 4,detectDates = TRUE) %>% 
-  mutate(date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
+bourso_joint <- bind_rows(
+  read.xlsx("input/Comptes/Bourso Joint/compte_JOINT_BOURSO_00040482911_du_05-02-2021_au_21-11-2021.xlsx",
+            sheet = 1,startRow = 4,detectDates = TRUE),
+  read.xlsx("input/Comptes/Bourso Joint/compte_JOINT_BOURSO_00040482911_du_21-11-2021_au_26-01-2022.xlsx",
+            sheet = 1,startRow = 4,detectDates = TRUE)
+) %>% 
+  mutate(
+    doublons = duplicated(paste0(DATE.OPERATION,LIBELLE,MONTANT)),
+    date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
          compte = "Bourso joint"
   ) %>% 
-  select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION) %>% 
+  select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION,-doublons) %>% 
   select(date, compte,everything())
 
 # SG Perso
-sg_perso <- read.xlsx("input/Comptes/SG Perso/compte_SG_Perso_23_05_21_au_21_11_21.xlsx",
-                      sheet = 1,startRow = 3,detectDates = TRUE)  %>% 
-  mutate(date = as.Date(`Date.de.l'opération`, format =  "%d/%m/%Y"),
+sg_perso <- bind_rows(
+  read.xlsx("input/Comptes/SG Perso/compte_SG_Perso_23_05_21_au_21_11_21.xlsx",
+            sheet = 1,startRow = 3,detectDates = TRUE),
+  read.xlsx("input/Comptes/SG Perso/compte_SG_Perso_21_11_21_au_26_01_22.xlsx",
+            sheet = 1,startRow = 3,detectDates = TRUE)
+) %>% 
+  mutate(
+    date = as.Date(`Date.de.l'opération`, format =  "%d/%m/%Y"),
          compte = "SG perso"
   ) %>%
-  select(date,compte,LIBELLE=`Détail.de.l'écriture`,MONTANT=`Montant.de.l'opération`)
+  select(date,compte,LIBELLE=`Détail.de.l'écriture`,MONTANT=`Montant.de.l'opération`) %>% 
+  mutate(
+    doublons = duplicated(paste0(date,LIBELLE,MONTANT)))
+
+sum(sg_perso$doublons)
 
 # SG joint
-sg_joint <- read.xlsx("input/Comptes/SG joint/compte_SG_JOINT_23_05_21_au_21_11_21.xlsx",
-                      sheet = 1,startRow = 3,detectDates = TRUE)  %>% 
+sg_joint <- bind_rows(
+  read.xlsx("input/Comptes/SG joint/compte_SG_JOINT_23_05_21_au_21_11_21.xlsx",
+                      sheet = 1,startRow = 3,detectDates = TRUE),
+  read.xlsx("input/Comptes/SG joint/compte_SG_JOINT_21_11_21_au_26_01_22.xlsx",
+            sheet = 1,startRow = 3,detectDates = TRUE),
+  ) %>% 
   mutate(date = as.Date(`Date.de.l'opération`, format =  "%d/%m/%Y"),
          compte = "SG joint"
   ) %>%
-  select(date,compte,LIBELLE=`Détail.de.l'écriture`,MONTANT=`Montant.de.l'opération`)
+  select(date,compte,LIBELLE=`Détail.de.l'écriture`,MONTANT=`Montant.de.l'opération`) %>% 
+  mutate(
+    doublons = duplicated(paste0(date,LIBELLE,MONTANT)))
+
+
+sum(sg_joint$doublons)
 
 # Carte visa premier
 visa_premier <- read.xlsx("input/Comptes/Bourso perso/carte_VISA_PREMIER_4979________0747_du_22-11-2020_au_21-11-2021.xlsx",
