@@ -1,4 +1,4 @@
-# Finances NK
+# Finances NK - data préparation
 
 library(openxlsx)
 library(tidyverse)
@@ -388,6 +388,10 @@ compte <- compte %>%
       !raison_operation %in% c("Linxea_per","Linxea_ass_vie","Nalo_ass_vie", "Epargne") & MONTANT <= 0 ~ "Depense",
       TRUE ~ "aurtre"),
   )
+
+
+# Enregistrement
+save(compte,file = "database/Finances NK/finances_NK.RData")
 
 
 # IV. Revenus----
