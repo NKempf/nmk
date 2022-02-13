@@ -1,4 +1,4 @@
-# Finances NK
+# Finances NK - data préparation
 
 library(openxlsx)
 library(tidyverse)
@@ -13,12 +13,15 @@ library(plotly)
 library(quantmod)
 
 # I. Patrimoine----
-fin <- read.xlsx("input/fin_16_11_2021.xlsx",detectDates = T,sheet = "patrimoine") %>% 
-  mutate(date2 = format(date, "%Y-%m"))
+fin <- read.xlsx("input/Finances/fin_26_01_2022.xlsx",detectDates = T,sheet = "patrimoine") %>% 
+  mutate(
+    date = as.Date.character(date,format="%d/%m/%Y"),
+    date2 = format(date, "%Y-%m")
+    )
 
 fin2 <- fin %>% 
-  select(date,BFM,LDD,PEA,Linxea_ass_vie, Nalo_ass_vie, PER, CTO, Maison ,livret_bourso) %>% 
-  mutate(Epargne.totale = BFM + LDD + PEA + Linxea_ass_vie + Nalo_ass_vie + PER + CTO + Maison + livret_bourso) %>% 
+  select(date,BFM,LDD,PEA,Linxea_ass_vie, Nalo_ass_vie, PER, CTO, Maison, Vanster ,livret_bourso) %>% 
+  mutate(Epargne.totale = BFM + LDD + PEA + Linxea_ass_vie + Nalo_ass_vie + PER + CTO + Maison + livret_bourso + Vanster) %>% 
   gather(compte,value,-date)
 
 # Graph : évolution du patrimoine 
@@ -82,44 +85,82 @@ ggplotly(g2)
 # III. Relevés de comptes----
 
 # Bourso perso (refonte)
-bourso_perso <- read.xlsx("input/Comptes/Bourso perso/compte_PERSO_BOURSO_00040384302_du_01-09-2020_au_21-11-2021.xlsx",
-                          sheet = 1,startRow = 4,detectDates = TRUE) %>% 
-  mutate(date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
+bourso_perso <- bind_rows(
+  read.xlsx("input/Comptes/Bourso perso/compte_PERSO_BOURSO_00040384302_du_01-09-2020_au_21-11-2021.xlsx",
+            sheet = 1,startRow = 4,detectDates = TRUE),
+  read.xlsx("input/Comptes/Bourso perso/compte_PERSO_BOURSO_00040384302_du_21-11-2021_au_26-01-2022.xlsx",
+            sheet = 1,startRow = 4,detectDates = TRUE)
+) %>% 
+ mutate(
+   MONTANT = as.numeric(paste0(MONTANT,".",DEVISE)),
+    doublons = duplicated(paste0(DATE.OPERATION,LIBELLE,MONTANT)),
+    date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
          compte = "Bourso perso"
-  ) %>% 
-  select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION) %>% 
-  select(date, compte,everything()) %>% 
+  ) %>%
+  select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION,-doublons) %>%
+  select(date, compte,everything()) %>%
   filter(!str_detect(LIBELLE, "Relev", negate = FALSE)) # Suppression des dépenses de CD premier car intégration dans la table globale
 
 # Bourso Joint
-bourso_joint <- read.xlsx("input/Comptes/Bourso Joint/compte_JOINT_BOURSO_00040482911_du_05-02-2021_au_21-11-2021.xlsx",
-                          sheet = 1,startRow = 4,detectDates = TRUE) %>% 
-  mutate(date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
+bourso_joint <- bind_rows(
+  read.xlsx("input/Comptes/Bourso Joint/compte_JOINT_BOURSO_00040482911_du_05-02-2021_au_21-11-2021.xlsx",
+            sheet = 1,startRow = 4,detectDates = TRUE),
+  read.xlsx("input/Comptes/Bourso Joint/compte_JOINT_BOURSO_00040482911_du_21-11-2021_au_26-01-2022.xlsx",
+            sheet = 1,startRow = 4,detectDates = TRUE)
+) %>% 
+  mutate(
+    MONTANT = as.numeric(paste0(MONTANT,".",DEVISE)),
+    doublons = duplicated(paste0(DATE.OPERATION,LIBELLE,MONTANT)),
+    date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
          compte = "Bourso joint"
   ) %>% 
-  select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION) %>% 
+  select(-DATE.VALEUR,-X6,-DEVISE,-DATE.OPERATION,-doublons) %>% 
   select(date, compte,everything())
 
 # SG Perso
-sg_perso <- read.xlsx("input/Comptes/SG Perso/compte_SG_Perso_23_05_21_au_21_11_21.xlsx",
-                      sheet = 1,startRow = 3,detectDates = TRUE)  %>% 
-  mutate(date = as.Date(`Date.de.l'opération`, format =  "%d/%m/%Y"),
+sg_perso <- bind_rows(
+  read.xlsx("input/Comptes/SG Perso/compte_SG_Perso_23_05_21_au_21_11_21.xlsx",
+            sheet = 1,startRow = 3,detectDates = TRUE),
+  read.xlsx("input/Comptes/SG Perso/compte_SG_Perso_21_11_21_au_26_01_22.xlsx",
+            sheet = 1,startRow = 3,detectDates = TRUE)
+) %>% 
+  mutate(
+    date = as.Date(`Date.de.l'opération`, format =  "%d/%m/%Y"),
          compte = "SG perso"
   ) %>%
-  select(date,compte,LIBELLE=`Détail.de.l'écriture`,MONTANT=`Montant.de.l'opération`)
+  select(date,compte,LIBELLE=`Détail.de.l'écriture`,MONTANT=`Montant.de.l'opération`) %>% 
+  mutate(
+    doublons = duplicated(paste0(date,LIBELLE,MONTANT)))
+
+sum(sg_perso$doublons)
 
 # SG joint
-sg_joint <- read.xlsx("input/Comptes/SG joint/compte_SG_JOINT_23_05_21_au_21_11_21.xlsx",
-                      sheet = 1,startRow = 3,detectDates = TRUE)  %>% 
+sg_joint <- bind_rows(
+  read.xlsx("input/Comptes/SG joint/compte_SG_JOINT_23_05_21_au_21_11_21.xlsx",
+                      sheet = 1,startRow = 3,detectDates = TRUE),
+  read.xlsx("input/Comptes/SG joint/compte_SG_JOINT_21_11_21_au_26_01_22.xlsx",
+            sheet = 1,startRow = 3,detectDates = TRUE),
+  ) %>% 
   mutate(date = as.Date(`Date.de.l'opération`, format =  "%d/%m/%Y"),
          compte = "SG joint"
   ) %>%
-  select(date,compte,LIBELLE=`Détail.de.l'écriture`,MONTANT=`Montant.de.l'opération`)
+  select(date,compte,LIBELLE=`Détail.de.l'écriture`,MONTANT=`Montant.de.l'opération`) %>% 
+  mutate(
+    doublons = duplicated(paste0(date,LIBELLE,MONTANT)))
+
+
+sum(sg_joint$doublons)
 
 # Carte visa premier
-visa_premier <- read.xlsx("input/Comptes/Bourso perso/carte_VISA_PREMIER_4979________0747_du_22-11-2020_au_21-11-2021.xlsx",
-                          sheet = 1,startRow = 4,detectDates = TRUE) %>% 
-  mutate(date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
+visa_premier <- bind_rows(
+  read.xlsx("input/Comptes/Bourso perso/carte_VISA_PREMIER_4979________0747_du_22-11-2020_au_21-11-2021.xlsx",
+                          sheet = 1,startRow = 4,detectDates = TRUE),
+  read.xlsx("input/Comptes/Bourso perso/carte_VISA_PREMIER_4979________0747_du_31-10-2021_au_27-01-2022.xlsx",
+            sheet = 1,startRow = 4,detectDates = TRUE),
+  ) %>% 
+  mutate(
+    MONTANT = as.numeric(paste0(MONTANT,".",DEVISE)),
+    date = as.Date(DATE.OPERATION, format =  "%d/%m/%Y"),
          compte = "Visa premier"
   ) %>% 
   select(-X5,-DEVISE,-DATE.OPERATION) %>% 
@@ -128,7 +169,10 @@ visa_premier <- read.xlsx("input/Comptes/Bourso perso/carte_VISA_PREMIER_4979___
 
 # Synthèse des comptes
 compte <- bourso_perso %>% 
-  bind_rows(bourso_joint,sg_perso,sg_joint,visa_premier) %>% 
+  bind_rows(bourso_joint,
+            sg_perso %>% select(-doublons),
+            sg_joint %>% select(-doublons),
+            visa_premier) %>% 
   mutate(ponderation = ifelse(
     compte %in% c("SG joint","Bourso joint"), 0.5,1)) %>% 
   arrange(date)
@@ -163,7 +207,7 @@ compte <- compte %>%
                               "FORFAITAIRE NOMBRE JOURS")
                             ,collapse = "|"),negate = FALSE) ~ "Frais bancaire",
            str_detect(LIBELLE,
-                      paste(c("Keolis Bordeaux","KEOLIS TBM","KADOLIS","KEOLIS")
+                      paste(c("Keolis Bordeaux","KEOLIS TBM","KADOLIS","KEOLIS","RATP")
                             ,collapse = "|"), negate = FALSE) ~ "Transport",
            str_detect(LIBELLE,
                       paste(c("CHEZ HORTENSE","BURGER KING","MCDONALD S","YAKI YAKI","LE MANCICIDOR","L AQUITAINE RESTAUR","CHEZ LAURETTE",
@@ -171,20 +215,22 @@ compte <- compte %>%
                               "LE CHIEN DE PAVLO","LE CAFE DU THEA","CHAI PASCAL","LES MILLE ET UNE NU","PIZZ LA FLOREN","LE LATINO","PRET A MANGER",
                               "VOISIN 11012","L OTENTIK","ROCHER MALENDUR","le petit gerard","LE JARDIN DE PA","GOUNES FOOD",
                               "DJAM S PIZZAS","FINGER MOOD","AQUIT RESTAU","KFC VILLENAVE","MISS FOOD","ATMOSPHER","KFC","LE LIBANAIS DE M",
-                              "VIR INST SAVEURS DU BOIS DU ROC")
+                              "VIR INST SAVEURS DU BOIS DU ROC","MAC DO LALIG","AGRAF WHITE","TENTATIONS GOURM","GOUPIL","CELLIERS DE BOENO",
+                              "MAC DONALD S","CREPERIEDESILES")
                             ,collapse = "|"), negate = FALSE) ~ "Restaurant",
            str_detect(LIBELLE,
                       paste(c("ASF","ESCOTA","APRR","COFIROUTE","AUTOROUTES")
                             ,collapse = "|"), negate = FALSE) ~ "Peage",
            str_detect(LIBELLE,
                       paste(c("ESSFLOREALY","CARREFSTATION","AUCHAN SUPER","AUCHAN CARBURANT","L AUTO D ARES","ITM STATION","CORA DL CARBURA","ABB BORDEAUX",
-                              "TOTAL","CHIOCCHIO","SCP MADIOT DUSSA","STATION U")
+                              "TOTAL","CHIOCCHIO","SCP MADIOT DUSSA","STATION U","STATION AVIA","AUCHAN BEGLES")
                             ,collapse = "|"), negate = FALSE) ~ "Essence",
            str_detect(LIBELLE,
                       paste(c("CYRILLUS","LA HALLE","MAILLE SOUPLE","KIABI","ROUMEGOUX   GIL","MAGODIS","ROUMEGOUX   GIL","MURMURS","HERBES FAUVE","HEDERA",
                               "SUMUP   MIRREY","JACADI","SUMUP   UKA DISTRIBUTION","la source","AUBERT","BABY LUX","MICHEL S","CDISCOUNT 1 A   4",
                               "MADIOT DUSSAUGE","BONOBO","VERTBAUDET","PETIT BATEAU","BEBE 9","BAHIA 4","SP   BIBSWORLD CO","BEBE AU NATUREL",
-                              "ATELIERROSEMOOD","MAMAN NATUR ELLE")
+                              "ATELIERROSEMOOD","MAMAN NATUR ELLE","Haglofs","SUMUP   CHINEURS","BURTON","MARINER INTERNATIONAL",
+                              "AUTOUR DE BEBE","JUSTEINSEPARABLE")
                             ,collapse = "|"), negate = FALSE) ~ "Habillement",
            str_detect(LIBELLE,
                       paste(c("DECATHLON","STEAM","CULTURA","HOT SPOT","Leetchi SA","COURSRA","PIP PRESSION","BASSIN LUMIERES",
@@ -193,7 +239,8 @@ compte <- compte %>%
                               "SC LA PLACE","SARL AXELLE","LA POSTE","PICWICTOYS","UNIVERSOTAKU FR","BK              2","MATY VAD",
                               "ANVAL","LE NOUVEAU COUCH","RODAME","CENTRE DE PLONG","KARUTRADE","SARL 3L","AMAZON EU SARL","RR LCS BAINS",
                               "CHARLE S","INDIGO","AMAZON DIGITAL","FNACMARKETPLACE","GOOGLE Google Storage","EBB","CAVE LES VIGNERON","ARGOS",
-                              "Stokke FR","ADEN   ANAIS LIMI")
+                              "Stokke FR","ADEN   ANAIS LIMI","PHOTOWEB","Boulanger","THE FROG BORDEAU","GLOU GLOU","BRIGNOLE 83 GV",
+                              "Google Play","L ATELIER FLORAL","NATURE DECOUVERT","LA FELIERE SAVEURS DU BOIS DU")
                             ,collapse = "|"), negate = FALSE) ~ "Loisir",
            
            str_detect(LIBELLE,
@@ -205,14 +252,15 @@ compte <- compte %>%
                               "MAISON DES VIANDE","PICARD","LECLERC","BIOCOOP","SUPER U","TOQUE CUIVRE","ARCOUR","AU ROCHER D AVON","FOURNIL DE BEGLE",
                               "LIDL","CARREFOUR","MTPK SAINT JEAN","LES MILLE PAINS","U EXPRESS","INTERMARCHE","COTE BOULANGE","INTERMARCH","GEANT",
                               "SOCCO SAINTE ROSE","YVONNE LIFESTOR3","VILLENAVE BIO","SUMUP   CABINET","FABRIQUE DE BEG",
-                              "KSM BOUCHERIE CH")
+                              "KSM BOUCHERIE CH","ANGUSS","CERISE SUR LE GAT","AUX CAPRICES DU","LA CHOCOLATINE","SC BON HEUR DE",
+                              "ETOILE MARKET","PATISSERIE ALEXAN","FROM MONT D OR","CORA VICHY")
                             ,collapse = "|"), negate = FALSE) ~ "Alimentation",
            
            str_detect(LIBELLE,
                       paste(c("SALON AURELIE","KLARY S COIFFU")
                             ,collapse = "|"), negate = FALSE) ~ "Coiffeur",
            str_detect(LIBELLE,
-                      paste(c("NETFLIX COM","Netfixte","JULIEN GLENISSON")
+                      paste(c("NETFLIX COM","Netfixte","JULIEN GLENISSON","AMAZON PRIME FR COMMERCE ELECTRONIQUE")
                             ,collapse = "|"), negate = FALSE) ~ "Netflix",
            str_detect(LIBELLE,
                       paste(c("PEPINIERES LANN","JARDILAND")
@@ -240,7 +288,7 @@ compte <- compte %>%
                             ,collapse = "|"), negate = FALSE) ~ "Eau",
            
            str_detect(LIBELLE,
-                      paste(c("DRFIP ILE DE FRANCE")
+                      paste(c("DRFIP ILE DE FRANCE","DGFIP SCBCM MINEFI","MUTUELLE DE L INSEE")
                             ,collapse = "|"), negate = FALSE) ~ "Insee",
            
            str_detect(LIBELLE,
@@ -252,7 +300,7 @@ compte <- compte %>%
                             ,collapse = "|"), negate = FALSE) ~ "Maison",
            
            str_detect(LIBELLE,
-                      paste(c("URSSAF RHONE ALPES","Severine","REBIERE SEVERINE")
+                      paste(c("URSSAF RHONE ALPES","Severine","REBIERE SEVERINE","URSSAF RA CC CESU")
                             ,collapse = "|"), negate = FALSE) ~ "Ménage",
            
            str_detect(LIBELLE, 
@@ -282,7 +330,7 @@ compte <- compte %>%
            
            str_detect(LIBELLE,
                       paste(c("DR DEBORDE","MGEFI","DR PARRIEUS","C P A M  BORDEAUX","PHARMACIE BARRIER","GRANDE PHARMACIE","MAISON SANTE PRO",
-                              "PHARMA RIVETTE","PHARMACIE GARCIA","PHARMACIE")
+                              "PHARMA RIVETTE","PHARMACIE GARCIA","PHARMACIE","DR CATH GRENARD")
                             ,collapse = "|"), negate = FALSE) ~ "Sante",
            
            str_detect(LIBELLE,
@@ -302,7 +350,7 @@ compte <- compte %>%
                             ,collapse = "|"), negate = FALSE) ~ "Linxea_per",
             
            str_detect(LIBELLE,
-                      paste(c("DIRECTION GENERALE DES FINANCE")
+                      paste(c("DIRECTION GENERALE DES FINANCE","DGFIP FINANCES PUBLIQUES")
                             ,collapse = "|"), negate = FALSE) ~ "Impots",
            
            str_detect(LIBELLE,
@@ -312,7 +360,8 @@ compte <- compte %>%
            str_detect(LIBELLE,
                       paste(c("VIR SEPA M  NICOLAS KEMPF","VIR Virement de Monsieur Nicolas KEMPF","VIR Virement de Monsieur Nicolas KEM",
                               "VIR Regularisation du compte","VIR EUROPEEN EMIS LOGITEL POUR  KEMPF","VIR INST KEMPF NICOLAS",
-                              "M  NICOLAS KEMPF","VIR Virement interne","VIR EUROPEEN EMIS LOGITEL POUR  INDIVISION KEMPF")
+                              "M  NICOLAS KEMPF","VIR Virement interne","VIR EUROPEEN EMIS LOGITEL POUR  INDIVISION KEMPF",
+                              "VIR Virement de Nicolas KEMPF","VIR SEPA 3000301248000675021","VIR SEPA 3000301248000675021")
                             ,collapse = "|"), negate = FALSE) ~ "Virement_interne",
            
            str_detect(LIBELLE,
@@ -341,212 +390,12 @@ compte <- compte %>%
   )
 
 
-# IV. Revenus----
-# Revenus hors virements interne ou avec SG
-rev <- compte %>% 
-  filter(sens_operation == "Revenu" & !raison_operation %in% c("Virement_Exterieur","Virement_Lise","Virement_interne","Epargne","Avion") & 
-           !str_detect(LIBELLE,
-                      paste(c("VIR Caution pret immo")
-                            ,collapse = "|"), negate = FALSE) 
-           ) %>% 
-  mutate(type_revenu = case_when(
-    raison_operation %in% c("Insee") ~ "Paye",
-    raison_operation %in% c("Sante","Netflix","Eau","Aucune") | str_detect(LIBELLE,
-               paste(c("AVOIR","SEPA ORANGE","VIR SEPA OFF  NOTARIAL VILLENAVE CHAMBER")
-                     ,collapse = "|"), negate = FALSE) ~ "Remboursement",
-    TRUE ~ "autre"),
-
-  ) 
-
-# Portefeuille Boursier
-portfolio <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "portfolio",startRow = 2,detectDates = TRUE)
-
-# Focus dividendes
-divi <- portfolio %>% 
-  filter(tolower(action) == "dividendes")
-
-
-# IV.1. Revenus totaux
-rev2 <- rev %>% 
-  select(date,type_revenu,MONTANT,ponderation) %>% 
-  bind_rows(
-    divi %>% 
-      select(date,MONTANT = total) %>% 
-      mutate(type_revenu = "Dividendes",ponderation = 1)
-  ) %>% 
-  mutate(mois = floor_date(date, unit = "month")) %>% 
-  group_by(mois,type_revenu) %>%
-  summarise(MONTANT = sum(MONTANT * ponderation)) %>% 
-  mutate(type_revenu = factor(type_revenu,levels = c("Autre","Dividendes","Remboursement","Paye")))
-  
-
-# Graphique des revenus
-rev.g1 <- ggplot(rev2, aes(fill=type_revenu, y=MONTANT, x=mois)) + 
-  geom_bar(position="stack", stat="identity")+
-  labs(
-    x = "Mois", 
-    y = "Montant (€)", 
-    fill = "Type",
-    title = "Revenus par mois NK"
-  )
-rev.g1
-
-# IV.2. le détail des revenus du mois
-mois.filtre <- 10
-
-revprinc <- rev %>% 
-  select(-type_operation,-sens_operation,-ponderation) %>% 
-  filter(month(date) == mois.filtre) %>% 
-  arrange(desc(MONTANT)) %>% 
-  adorn_totals("row") 
-
-tab_rev <- datatable(revprinc,rownames = FALSE,colnames = c("Date","Compte","Raison","Montant (€)","Origine","Type"))
-
-# IV.3. Suivi des dividendes
-divi_g1 <- divi %>% 
-  mutate(mois = floor_date(date, unit = "month")) %>% 
-  group_by(mois) %>% 
-  summarise(
-    dividendes = sum(total)) %>% 
-  mutate(
-    dividendes_cumules = cumsum(dividendes)
-  ) 
-
-rev.g2 <- ggplot(divi_g1) + 
-  geom_bar(aes(y=dividendes, x=mois), stat="identity") +
-  geom_line(aes(y=dividendes_cumules, x=mois),colour = "#fed766") +
-  labs(
-    x = "Mois", 
-    y = "Montant (€)", 
-    # fill = "Type",
-    title = "Dividendes par mois NK"
-  )
-ggplotly(rev.g2)
-
-
-# V. Dépenses----
-depenses <- compte %>% 
-  filter(sens_operation == "Depense" & !raison_operation %in% c("Virement_Exterieur","Virement_Lise","Virement_interne","Epargne","Avion")
-         # & 
-         #   !str_detect(LIBELLE,
-         #               paste(c("VIR Caution pret immo")
-         #                     ,collapse = "|"), negate = FALSE) 
-  )  %>% 
-  mutate(type_depense = case_when(
-    raison_operation %in% c("Ammeublement","Assurance","Assurance_pret","Bricolage","Eau","Electricite","Gaz","Jardin","Maison","Ménage","Pret_immo") ~ "Logement",
-    raison_operation %in% c("Essence","Voiture") ~ "Voiture",
-    raison_operation %in% c("Alimentation") ~ "Alimentation",
-    raison_operation %in% c("Coiffeur","Habillement") ~ "Soin_personne",
-    raison_operation %in% c("Frais bancaire") ~ "Banque",
-    raison_operation %in% c("Hotel","Peage","Train","Transport") ~ "Voyage_transport",
-    raison_operation %in% c("Impots") ~ "Impots",
-    raison_operation %in% c("Linxea_ass_vie","Linxea_per","Nalo_ass_vie") ~ "Epargne",
-    raison_operation %in% c("Loisir","Netflix","Orange","Moto","Aucune") ~ "Loisir",
-    raison_operation %in% c("Restaurant") ~ "Restaurant",
-    raison_operation %in% c("Sante") ~ "Sante",
-    TRUE ~ "autre"
-  ),
-  
-  regularite_depense = case_when(
-    raison_operation %in% c("Assurance","Assurance_pret","Eau","Electricite","Gaz","Linxea_ass_vie","Linxea_per","Ménage",
-                            "Nalo_ass_vie","Netflix","Orange","Pret_immo") ~ "Mensuel",
-    TRUE ~ "Exceptionnelle"
-  ),
-  
-  # Correction : virement ponctuel sur assurance vie
-  regularite_depense = ifelse(
-    raison_operation %in% c("Linxea_ass_vie","Linxea_per","Nalo_ass_vie") & abs(MONTANT) >= 1000,"Exceptionnelle", regularite_depense)
-  
-  )
-
-dep2 <- depenses %>% 
-  mutate(mois = floor_date(date, unit = "month")) %>% 
-  group_by(mois,type_depense) %>% 
-  summarise(
-    MONTANT = abs(sum(MONTANT * ponderation))
-  )
-
-# G1 : dépenses par mois au virements
-dep.g1 <- ggplot(dep2, aes(fill=type_depense, y=MONTANT, x=mois)) + 
-  geom_bar(position="stack", stat="identity") +
-  labs(
-    x = "Mois", 
-    y = "Montant (€)", 
-    fill = "Type",
-    title = "Dépenses par mois NK"
-  )
-dep.g1
-
-# G2 : détails des dépenses par mois
-mois.filtre <- 10
-
-dep.details <- depenses %>% 
-  select(-sens_operation,-ponderation,-type_operation) %>% 
-  filter(month(date) == mois.filtre & abs(MONTANT) >= 100) %>% 
-  arrange(MONTANT) %>% 
-  adorn_totals("row") 
-
-dep.g2 <- datatable(dep.details,rownames = FALSE,colnames = c("Date","Compte","Montant (€)","Raison","Origine","Type"))
-dep.g2
-
-
-dep3 <- depenses %>% 
-  filter(regularite_depense == "Mensuel") %>% 
-  mutate(
-    type_depense_reguliere = case_when(
-      raison_operation %in% c("Assurance","Assurance_pret","Pret_immo","Ménage") ~ "Maison",
-      raison_operation %in% c("Eau","Electricite","Gaz") ~ "Energie_Eau",
-      raison_operation %in% c("Linxea_ass_vie","Linxea_per","Nalo_ass_vie") ~ "Epargne",
-      raison_operation %in% c("Netflix","Orange") ~ "TIC",
-      TRUE ~ "autre"
-    ),
-    mois = floor_date(date, unit = "month")
-  ) %>% 
-  group_by(mois,type_depense_reguliere) %>% 
-  summarise(
-    MONTANT = abs(sum(MONTANT*ponderation))
-  ) %>%
-  mutate(pct = round(100*MONTANT / sum(MONTANT),2))
-
-dep.g3 <- ggplot(dep3, aes(fill=type_depense_reguliere, y=MONTANT, x=mois)) + 
-  geom_bar(position="stack", stat="identity") +
-  # geom_text(aes(label = pct)) +
-  labs(
-    x = "Mois", 
-    y = "Montant (€)", 
-    fill = "Type",
-    title = "Dépenses régulières par mois NK"
-  )
-
-ggplotly(dep.g3)
-
-save(compte,fin2,file = "input/Comptes/synthese_fin.RData")
-
-# Epargne
-
-effort_epargne <- compte %>% 
-  filter(raison_operation %in% c("Linxea_ass_vie","Linxea_per","Nalo_ass_vie")) %>% 
-  group_by(mois,raison_operation) %>% 
-  summarise(
-    MONTANT = abs(sum(MONTANT*ponderation))
-  ) %>%
-  mutate(pct = round(100*MONTANT / sum(MONTANT),2))
-
-dep.g4 <- ggplot(effort_epargne, aes(fill=raison_operation, y=MONTANT, x=mois)) + 
-  geom_bar(position="stack", stat="identity") +
-  # geom_text(aes(label = pct)) +
-  labs(
-    x = "Mois", 
-    y = "Montant (€)", 
-    fill = "Type",
-    title = "Effort d'épargne par mois NK"
-  )
-
-ggplotly(dep.g4)
+# Enregistrement
+save(compte,file = "database/Finances NK/finances_NK.RData")
 
 
 # VI. Portefeuille Boursier----
-portfolio <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "portfolio",startRow = 2,detectDates = TRUE)
+# portfolio <- read.xlsx("input/fin_16_11_2021.xlsx",sheet = "portfolio",startRow = 2,detectDates = TRUE)
 
 # Origine des dividendes
 divi_g2 <- divi %>% 
