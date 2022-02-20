@@ -1320,7 +1320,59 @@ portfolio_model_augmented %>%
             color = "green") +
   xlab("date")
 
+# Visualisation CAPM with highcahart----
+highchart() %>% 
+  hc_title(text = "Portfolio v. Market Returns Scatter") %>%
+  hc_add_series(portfolio_model_augmented, 
+                type = "scatter",
+                color = "cornflowerblue",
+                hcaes(x = round(mkt_rtns, 4), 
+                      y = round(returns, 4)), 
+                name = "Returns") %>%
+  hc_xAxis(title = list(text = "Market Returns")) %>% 
+  hc_yAxis(title = list(text = "Portfolio Returns")) %>% 
+  hc_add_theme(hc_theme_flat()) %>%
+  hc_exporting(enabled = TRUE)
 
+
+highchart() %>% 
+  hc_title(text = "Portfolio v. Market Returns Scatter w/Date") %>%
+  hc_add_series(portfolio_model_augmented, 
+                type = "scatter",
+                color = "cornflowerblue",
+                hcaes(x = round(mkt_rtns, 4), 
+                      y = round(returns, 4),
+                      date = date), 
+                name = "Returns") %>%
+  hc_xAxis(title = list(text = "Market Returns")) %>% 
+  hc_yAxis(title = list(text = "Portfolio Returns")) %>% 
+  hc_tooltip(formatter = JS("function(){
+    return ('port return: ' + this.y + ' <br> mkt return: ' + this.x +  
+    ' <br> date: ' + this.point.date)}")) %>% 
+  hc_add_theme(hc_theme_flat()) %>%
+  hc_exporting(enabled = TRUE)
+
+
+highchart() %>% 
+  hc_title(text = "Scatter with Regression Line") %>% 
+  hc_add_series(portfolio_model_augmented, 
+                type = "scatter", 
+                color = "cornflowerblue",
+                hcaes(x = round(mkt_rtns, 4), 
+                      y = round(returns, 4),
+                      date = date), 
+                name = "Returns") %>%
+  hc_add_series(portfolio_model_augmented, 
+                type = "line", 
+                hcaes(x = mkt_rtns, y = .fitted), 
+                name = "CAPM Beta = Regression Slope") %>% 
+  hc_xAxis(title = list(text = "Market Returns")) %>% 
+  hc_yAxis(title = list(text = "Portfolio Returns")) %>% 
+  hc_tooltip(formatter = JS("function(){
+     return ('port return: ' + this.y + ' <br> mkt return: ' + this.x +  
+     ' <br> date: ' + this.point.date)}"))%>% 
+  hc_add_theme(hc_theme_flat()) %>%
+  hc_exporting(enabled = TRUE)
 
 
 
