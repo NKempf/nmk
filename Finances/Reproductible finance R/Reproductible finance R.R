@@ -1282,15 +1282,28 @@ portfolio_returns_tq_rebalanced_monthly %>%
 
 
 # Ca bug !!!
+# portfolio_model_augmented <- 
+#   portfolio_returns_tq_rebalanced_monthly %>% 
+#   do(model = 
+#        lm(returns ~ 
+#             market_returns_tidy$returns, data = .)) %>% 
+#   augment(model) %>% 
+#   rename(mkt_rtns = market_returns_tidy.returns) %>% 
+#   select(returns, mkt_rtns, .fitted) %>% 
+#   mutate(date = portfolio_returns_tq_rebalanced_monthly$date)
+
+# 20.02.2022 : corrigé par NK
 portfolio_model_augmented <- 
   portfolio_returns_tq_rebalanced_monthly %>% 
   do(model = 
        lm(returns ~ 
             market_returns_tidy$returns, data = .)) %>% 
-  augment(model) %>% 
-  rename(mkt_rtns = market_returns_tidy.returns) %>% 
+  mutate(model = map(model, augment)) %>% 
+  unnest(model) %>% 
+  rename(mkt_rtns = `market_returns_tidy$returns`) %>% 
   select(returns, mkt_rtns, .fitted) %>% 
   mutate(date = portfolio_returns_tq_rebalanced_monthly$date)
+
 
 head(portfolio_model_augmented, 3)
 ## # A tibble: 3 x 4
