@@ -1374,5 +1374,119 @@ highchart() %>%
   hc_add_theme(hc_theme_flat()) %>%
   hc_exporting(enabled = TRUE)
 
+# Fama-French 3 factor model----
+
+
+temp <- tempfile()
+# Split the url into pieces
+
+"https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Developed_3_Factors_CSV.zip"
+
+base <- 
+  "http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/"
+factor <- 
+  "Developed_3_Factors"
+format<-
+  "_CSV.zip"
+
+# Paste the pieces together to form the full url
+full_url <-
+  paste(base,
+        factor,
+        format,
+        sep ="")
+download.file(
+  full_url,
+  temp,
+  quiet = TRUE)
+
+Global_3_Factors <- 
+  read_csv(unz(temp, 
+               paste0(factor,".csv")))
+
+head(Global_3_Factors, 3)  
+
+
+Global_3_Factors <- 
+  read_csv(unz(temp, 
+               paste0(factor,".csv")), 
+           skip = 6)
+
+head(Global_3_Factors, 3)
+
+map(Global_3_Factors, class)
+
+
+Global_3_Factors <- 
+  read_csv(unz(temp, 
+               paste0(factor,".csv")), 
+           skip = 6,
+           col_types = cols(
+             `Mkt-RF` = col_double(),
+             SMB = col_double(),
+             HML = col_double(),
+             RF = col_double()))
+
+head(Global_3_Factors, 3)
+
+colnames(Global_3_Factors)
+
+Global_3_Factors <- 
+  read_csv(unz(temp, 
+               paste0(factor,".csv")),
+           skip = 6) %>%
+  rename(date = `...1`) %>% 
+  mutate_at(vars(-date), as.numeric)
+
+head(Global_3_Factors, 3)
+
+
+Global_3_Factors <- 
+  read_csv(unz(temp, 
+               paste0(factor,".csv")),
+           skip = 6) %>%
+  rename(date = `...1`) %>% 
+  mutate_at(vars(-date), as.numeric) %>% 
+  mutate(date = 
+           ymd(parse_date_time(date, "%Y%m"))) 
+
+head(Global_3_Factors, 3)
+
+Global_3_Factors %>% 
+  select(date) %>%
+  mutate(date = lubridate::rollback(date)) %>% 
+  head(1)
+
+Global_3_Factors %>% 
+  select(date) %>%
+  mutate(date = lubridate::rollback(date + months(1))) %>% 
+  head(1)
+
+# Final code
+Global_3_Factors <- 
+  read_csv(unz(temp, 
+               paste0(factor,".csv")),
+           skip = 6) %>%
+  rename(date = `...1`) %>% 
+  mutate_at(vars(-date), as.numeric) %>% 
+  mutate(date = 
+           ymd(parse_date_time(date, "%Y%m"))) %>%  
+  mutate(date = rollback(date + months(1)))
+
+head(Global_3_Factors, 3)
+
+ff_portfolio_returns <- 
+  portfolio_returns_tq_rebalanced_monthly %>% 
+  left_join(Global_3_Factors, by = "date")  %>% 
+  mutate(MKT_RF = `Mkt-RF`/100,
+         SMB = SMB/100,
+         HML = HML/100,
+         RF = RF/100,
+         R_excess = round(returns - RF, 4)) %>% 
+  select(-returns, -RF)
+
+
+head(ff_portfolio_returns, 3)
+
 
 
