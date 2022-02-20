@@ -1078,3 +1078,236 @@ rolling_sharpe_xts %>%
   scale_x_date(breaks = pretty_breaks(n = 8)) +
   theme(plot.title = element_text(hjust = 0.5))
 
+# CAPM beta byhand----
+
+market_returns_xts <- 
+  getSymbols("SPY", 
+             src = 'yahoo', 
+             from = "2012-12-31", 
+             to = "2017-12-31",
+             auto.assign = TRUE, 
+             warnings = FALSE) %>% 
+  map(~Ad(get(.))) %>% 
+  reduce(merge) %>%
+  `colnames<-`("SPY") %>% 
+  to.monthly(indexAt = "lastof", 
+             OHLC = FALSE) %>% 
+  Return.calculate(., 
+                   method = "log") %>% 
+  na.omit()
+
+market_returns_tidy <-
+  market_returns_xts %>% 
+  tk_tbl(preserve_index = TRUE,
+         rename_index = "date") %>% 
+  na.omit() %>%
+  select(date, returns = SPY)
+
+portfolio_returns_tq_rebalanced_monthly %>% 
+  mutate(market_returns = market_returns_tidy$returns) %>%
+  head(3)
+
+
+cov(portfolio_returns_xts_rebalanced_monthly,
+    market_returns_tidy$returns)/
+  var(market_returns_tidy$returns)
+
+beta_assets <- 
+  asset_returns_long %>% 
+  nest(-asset)
+
+beta_assets
+
+beta_assets <- 
+  asset_returns_long %>% 
+  nest(-asset) %>% 
+  mutate(model = 
+           map(data, ~ 
+                 lm(returns ~ market_returns_tidy$returns, 
+                    data = .))) 
+
+beta_assets
+
+library(broom)
+beta_assets <- 
+  asset_returns_long %>% 
+  nest(-asset) %>% 
+  mutate(model = 
+           map(data, ~ 
+                 lm(returns ~ market_returns_tidy$returns, 
+                    data = .))) %>%
+  mutate(model = map(model, tidy))
+
+beta_assets
+
+beta_assets <- 
+  asset_returns_long %>% 
+  nest(-asset) %>% 
+  mutate(model = 
+           map(data, ~ 
+                 lm(returns ~ market_returns_tidy$returns, 
+                    data = .))) %>%
+  mutate(model = map(model, tidy)) %>% 
+  unnest(model) %>% 
+  mutate_if(is.numeric, funs(round(., 4)))
+
+beta_assets
+
+beta_assets <- 
+  asset_returns_long %>% 
+  nest(-asset) %>% 
+  mutate(model = 
+           map(data, ~ 
+                 lm(returns ~ market_returns_tidy$returns, 
+                    data = .))) %>%
+  mutate(model = map(model, tidy)) %>% 
+  unnest(model) %>% 
+  filter(term != "(Intercept)") %>% 
+  select(-term)
+
+beta_assets
+
+beta_assets %>% 
+  select(asset, estimate) %>% 
+  filter(asset == "SPY")
+
+beta_byhand <- 
+  w[1] * beta_assets$estimate[1] + 
+  w[2] * beta_assets$estimate[2] + 
+  w[3] * beta_assets$estimate[3] +
+  w[4] * beta_assets$estimate[4] +
+  w[5] * beta_assets$estimate[5]
+
+beta_byhand
+
+# CAPM beta in xts world----
+beta_builtin_xts <- 
+  CAPM.beta(portfolio_returns_xts_rebalanced_monthly, 
+            market_returns_xts)
+
+
+beta_builtin_xts
+
+# beta_dplyr_byhand <-
+#   portfolio_returns_tq_rebalanced_monthly %>%
+#   do(model =
+#        lm(returns ~ market_returns_tidy$returns,
+#           data = .)) %>%
+#   tidy(model) %>%
+#   mutate(term = c("alpha", "beta")) %>%
+#   select(estimate)
+
+# 20.02.2022 : code corrigé par NK
+beta_dplyr_byhand <-
+  portfolio_returns_tq_rebalanced_monthly %>%
+  do(model =
+       lm(returns ~ market_returns_tidy$returns,
+          data = .)) %>% 
+  mutate(model = map(model, tidy)) %>% 
+  unnest(model) %>% 
+    mutate(term = c("alpha", "beta")) %>%
+    select(estimate)
+
+beta_dplyr_byhand$estimate[2]
+
+
+beta_builtin_tq <- 
+  portfolio_returns_tq_rebalanced_monthly %>% 
+  mutate(market_return = 
+           market_returns_tidy$returns) %>% 
+  na.omit() %>% 
+  tq_performance(Ra = returns, 
+                 Rb = market_return, 
+                 performance_fun = CAPM.beta) %>% 
+  `colnames<-`("beta_tq")
+
+beta_builtin_tq %>% 
+  mutate(
+    # dplyr_beta = beta_dplyr_byhand$estimate[2],
+         byhand_beta = beta_byhand,
+         xts_beta = coredata(beta_builtin_xts)) %>% 
+  round(3)
+
+# Visualizing CAPM with ggplot----
+
+portfolio_returns_tq_rebalanced_monthly %>% 
+  mutate(market_returns = 
+           market_returns_tidy$returns) %>% 
+  ggplot(aes(x = market_returns, 
+             y = returns)) + 
+  geom_point(color = "cornflowerblue") +
+  ylab("portfolio returns") +
+  xlab("market returns")
+
+portfolio_returns_tq_rebalanced_monthly %>% 
+  mutate(market_returns = 
+           market_returns_tidy$returns) %>% 
+  ggplot(aes(x = market_returns,
+             y = returns)) + 
+  geom_point(color = "cornflowerblue") +
+  geom_smooth(method = "lm", 
+              se = FALSE, 
+              color = "green") +
+  ylab("portfolio returns") +
+  xlab("market returns")
+
+portfolio_returns_tq_rebalanced_monthly %>%
+  mutate(market_returns = market_returns_tidy$returns) %>%
+  ggplot(aes(x = market_returns, y = returns)) +
+  geom_point(color = "cornflowerblue") +
+  geom_abline(aes(
+    intercept = beta_dplyr_byhand$estimate[1],
+    slope = beta_dplyr_byhand$estimate[2]),
+    color = "purple") +
+  ylab("portfolio returns") +
+  xlab("market returns")
+
+
+portfolio_returns_tq_rebalanced_monthly %>% 
+  mutate(market_returns =
+           market_returns_tidy$returns) %>% 
+  ggplot(aes(x = market_returns, 
+             y = returns)) + 
+  geom_point(color = "cornflowerblue") +
+  geom_abline(
+    aes(intercept =
+          beta_dplyr_byhand$estimate[1],
+        slope = beta_dplyr_byhand$estimate[2]),
+    color = "purple") +
+  geom_smooth(method = "lm", 
+              se = FALSE, 
+              color = "green") +
+  ylab("portfolio returns") +
+  xlab("market returns")
+
+
+# Ca bug !!!
+portfolio_model_augmented <- 
+  portfolio_returns_tq_rebalanced_monthly %>% 
+  do(model = 
+       lm(returns ~ 
+            market_returns_tidy$returns, data = .)) %>% 
+  augment(model) %>% 
+  rename(mkt_rtns = market_returns_tidy.returns) %>% 
+  select(returns, mkt_rtns, .fitted) %>% 
+  mutate(date = portfolio_returns_tq_rebalanced_monthly$date)
+
+head(portfolio_model_augmented, 3)
+## # A tibble: 3 x 4
+##     returns mkt_rtns .fitted date      
+##       <dbl>    <dbl>   <dbl> <date>    
+## 1  0.0308     0.0499 0.0413  2013-01-31
+## 2 -0.000870   0.0127 0.00810 2013-02-28
+## 3  0.0187     0.0373 0.0300  2013-03-31
+portfolio_model_augmented %>% 
+  ggplot(aes(x = date)) + 
+  geom_line(aes(y = returns), 
+            color = "cornflowerblue") + 
+  geom_line(aes(y = .fitted), 
+            color = "green") +
+  xlab("date")
+
+
+
+
+
