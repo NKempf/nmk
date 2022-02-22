@@ -1475,6 +1475,7 @@ Global_3_Factors <-
 
 head(Global_3_Factors, 3)
 
+
 ff_portfolio_returns <- 
   portfolio_returns_tq_rebalanced_monthly %>% 
   left_join(Global_3_Factors, by = "date")  %>% 
@@ -1487,6 +1488,149 @@ ff_portfolio_returns <-
 
 
 head(ff_portfolio_returns, 3)
+
+# Corrigé NK 22.02.2022
+ff_dplyr_byhand <-
+  ff_portfolio_returns %>% 
+  do(model = 
+       lm(R_excess ~ MKT_RF + SMB + HML, 
+          data = .)) %>% 
+  mutate(model = map(model, tidy, conf.int = T, conf.level = .95)) %>% 
+  unnest(model) %>% 
+  # tidy(model, conf.int = T, conf.level = .95) %>%
+  rename(beta = estimate)
+
+ff_dplyr_byhand %>% 
+  mutate_if(is.numeric, funs(round(., 3))) %>% 
+  select(-statistic) 
+
+# Visualizing Fama-French with ggplot----
+
+ff_dplyr_byhand %>% 
+  mutate_if(is.numeric, funs(round(., 3))) %>%
+  filter(term != "(Intercept)") %>% 
+  ggplot(aes(x = term, 
+             y = beta, 
+             shape = term, 
+             color = term)) + 
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, 
+                    ymax = conf.high)) +
+  labs(title = "FF 3-Factor Coefficients",
+       subtitle = "balanced portfolio",
+       x = "",
+       y = "coefficient",
+       caption = "data source: Fama-French website") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        plot.caption  = element_text(hjust = 0))
+
+
+# Rolling Fama-French with the tidyverse and tibbletime----
+
+# Choose a 24-month rolling window
+window <- 24
+# define a rolling ff model with tibbletime
+rolling_lm <- 
+  rollify(.f = function(R_excess, MKT_RF, SMB, HML) {
+    lm(R_excess ~ MKT_RF + SMB + HML)
+  }, window = window, unlist = FALSE)
+
+rolling_ff_betas <-
+  ff_portfolio_returns %>% 
+  mutate(rolling_ff = 
+           rolling_lm(R_excess, 
+                      MKT_RF, 
+                      SMB, 
+                      HML)) %>%  
+  slice(-1:-23) %>% 
+  select(date, rolling_ff)
+
+head(rolling_ff_betas, 3)
+
+rolling_ff_betas <-
+  ff_portfolio_returns %>% 
+  mutate(rolling_ff = 
+           rolling_lm(R_excess, 
+                      MKT_RF, 
+                      SMB, 
+                      HML)) %>% 
+  mutate(tidied = map(rolling_ff, 
+                      tidy, 
+                      conf.int = T)) %>% 
+  unnest(tidied) %>% 
+  slice(-1:-23) %>% 
+  select(date, term, estimate, conf.low, conf.high) %>% 
+  filter(term != "(Intercept)") %>% 
+  rename(beta = estimate, factor = term) %>% 
+  group_by(factor)
+
+head(rolling_ff_betas, 3)
+
+rolling_ff_rsquared <-
+  ff_portfolio_returns %>% 
+  mutate(rolling_ff = 
+           rolling_lm(R_excess, 
+                      MKT_RF, 
+                      SMB, 
+                      HML)) %>%
+  slice(-1:-23) %>%
+  mutate(glanced = map(rolling_ff, 
+                       glance)) %>% 
+  unnest(glanced) %>% 
+  select(date, r.squared, adj.r.squared, p.value)
+
+head(rolling_ff_rsquared, 3)
+
+# Visualizing Rolling Fama-French----
+
+rolling_ff_betas %>% 
+  ggplot(aes(x = date, 
+             y = beta, 
+             color = factor)) + 
+  geom_line() +
+  labs(title= "24-Month Rolling FF Factor Betas") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 90)) 
+
+rolling_ff_rsquared_xts <- 
+  rolling_ff_rsquared %>%
+  tk_xts(date_var = date, silent = TRUE)
+
+highchart(type = "stock") %>% 
+  hc_add_series(rolling_ff_rsquared_xts$r.squared,
+                color = "cornflowerblue",
+                name = "r-squared") %>% 
+  hc_title(text = "Rolling FF 3-Factor R-Squared") %>%
+  hc_add_theme(hc_theme_flat()) %>%
+  hc_navigator(enabled = FALSE) %>% 
+  hc_scrollbar(enabled = FALSE) %>% 
+  hc_exporting(enabled = TRUE)
+
+
+highchart(type = "stock") %>% 
+  hc_add_series(rolling_ff_rsquared_xts$r.squared,
+                color = "cornflowerblue",
+                name = "r-squared") %>% 
+  hc_title(text = "Rolling FF 3-Factor R-Squared") %>%
+  hc_yAxis( max = 2, min = 0) %>% 
+  hc_add_theme(hc_theme_flat()) %>%
+  hc_navigator(enabled = FALSE) %>% 
+  hc_scrollbar(enabled = FALSE) %>% 
+  hc_exporting(enabled = TRUE)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
