@@ -1,5 +1,6 @@
 # Backtesting Schumann
-
+library(openxlsx)
+library(lubridate)
 library(tidyverse)
 library (NMOF)
 library (PMwR)
@@ -214,8 +215,29 @@ trade_details(btest(prices, signal), prices)
 btest(prices, signal) %>% 
   trade_details(prices)
 
-<<<<<<< HEAD
-# p 26
-=======
-# p 33
->>>>>>> b38f98fb5f6416eb6e5676d15dad3d817b2c1f4e
+
+
+# Real case : SHiller---------------------------------------------------------------------------------------------
+
+
+library("NMOF")
+# data <- Shiller(dest.dir = "input/datasample/Shiller/")
+
+
+data <- readxl::read_xls("input/datasample/Shiller/ie_data.xls",sheet = "Data",skip = 7) %>% 
+  mutate(Date = ym(str_replace(as.character(Date),pattern = "\\.",replacement = "-"))
+)
+str(data)
+
+
+read.xlsx("input/datasample/Shiller/ie_data.xls",sheet = "Data",skip = 7,detectDates = TRUE)
+
+
+P <- French ("input/datasample/K French/" ,
+             dataset = "49_Industry_Portfolios_daily_CSV.zip " ,
+             weighting = "value" ,
+             frequency = "daily" ,
+             price.series = TRUE ,
+             na.rm = TRUE )
+
+
