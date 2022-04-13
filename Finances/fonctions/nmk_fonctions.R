@@ -16,5 +16,11 @@ sd_glissant <- function(xts_2d,window = 24){
 
 
 
+rolling_skew_xts <- function(xts,window = 24)
+  rollapply(xts,
+            FUN = skewness,
+            width = window) %>% 
+  na.omit()
+
 
 
