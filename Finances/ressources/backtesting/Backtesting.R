@@ -215,6 +215,7 @@ trade_details(btest(prices, signal), prices)
 btest(prices, signal) %>% 
   trade_details(prices)
 
+<<<<<<< HEAD:Finances/ressources/backtesting/Backtesting.R
 
 
 # Real case : SHiller---------------------------------------------------------------------------------------------
@@ -241,3 +242,6 @@ P <- French ("input/datasample/K French/" ,
              na.rm = TRUE )
 
 
+=======
+# p 26
+>>>>>>> 9f46c5683fbe7f7e8c2db6c720ae1db52dd281c6:Finances/Backtesting/Backtesting.R
