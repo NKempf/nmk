@@ -15,7 +15,6 @@ Outils d'analyse d'un portefeuille financier
   * `portfolioAnalytics` 
   
 
-  
 ## Bibliographie 
 
 * Portfolio optimization with R/Rmetrics [livre](https://www.rmetrics.org/ebooks-portfolio) **A lire**
@@ -34,5 +33,10 @@ Outils d'analyse d'un portefeuille financier
 
 * `Nasdaq Data Link` : nouveau quandl, une partie des données sont gratuites https://data.nasdaq.com/search?filters=%5B%22Free%22%5D
 * `Alphavantage` :  une partie des données sont gratuites (nécessite une clé API pour y accéder) https://www.alphavantage.co/ (67L4KQSVHW4SCT2L)
+
+## Blog idées d'articles
+
+* Calculer les profits
+* Gestion du risque
 
 

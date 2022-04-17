@@ -12,11 +12,9 @@ library(quantmod)
 library(PerformanceAnalytics)
 library(scales)
 
-<<<<<<< HEAD
-=======
+
 source("finances/fonctions/nmk_fonctions.R")
 
->>>>>>> 9f46c5683fbe7f7e8c2db6c720ae1db52dd281c6
 
 # I. Import des données ---------------------------------------------------------------------------------------------
 symbols <- c("SPY","TTE","RUI.PA")
@@ -286,11 +284,6 @@ asset_returns_long %>%
     color = "cornflowerblue")
 
 
-<<<<<<< HEAD
-# Expected Retyrns verses risk----
-=======
-# Expected Returns versus risk----
->>>>>>> 9f46c5683fbe7f7e8c2db6c720ae1db52dd281c6
 asset_returns_long %>% 
   group_by(asset) %>%
   summarise(expected_return = mean(returns),
@@ -319,8 +312,6 @@ asset_returns_long %>%
   theme_update(plot.title = element_text(hjust = 0.5))
 
 
-<<<<<<< HEAD
-=======
 # Rolling Standard Deviation in the xts world----
 window <- 24
 
@@ -961,8 +952,6 @@ asset_returns_long %>%
 
 
 
-
->>>>>>> 9f46c5683fbe7f7e8c2db6c720ae1db52dd281c6
 
 
 
